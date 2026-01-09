@@ -3,6 +3,7 @@ import {Geist, Geist_Mono} from 'next/font/google';
 import './globals.css';
 import { AppSidebar } from '@/components/AppSidebar';
 import { Toaster } from '@/components/ui/toaster';
+import { FirebaseClientProvider } from '@/firebase';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -27,13 +28,15 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <div className="flex flex-col min-h-screen">
-          <header className="flex justify-end p-4">
-            <AppSidebar />
-          </header>
-          <main className="flex-grow">{children}</main>
-        </div>
-        <Toaster />
+        <FirebaseClientProvider>
+          <div className="flex flex-col min-h-screen">
+            <header className="flex justify-end p-4">
+              <AppSidebar />
+            </header>
+            <main className="flex-grow">{children}</main>
+          </div>
+          <Toaster />
+        </FirebaseClientProvider>
       </body>
     </html>
   );
