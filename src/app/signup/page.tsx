@@ -39,14 +39,26 @@ const stepOneSchema = z.object({
   }),
 });
 
-const stepTwoSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(6, 'Password must be at least 6 characters.'),
-  parentEmail: z.string().email('Please enter a valid parent email.').optional(),
-});
+// Step 2 schema is now a function to make it dynamic based on age
+const createStepTwoSchema = (age: number | null) => {
+    let schema = z.object({
+        email: z.string().email(),
+        password: z.string().min(6, 'Password must be at least 6 characters.'),
+        parentEmail: z.string().optional(),
+    });
+
+    if (age !== null && age < 14) {
+        schema = schema.extend({
+            parentEmail: z.string().email('Please enter a valid parent email.'),
+        });
+    }
+
+    return schema;
+}
 
 type StepOneData = z.infer<typeof stepOneSchema>;
-type StepTwoData = z.infer<typeof stepTwoSchema>;
+// Infer type from a base schema, as it can be dynamic
+type StepTwoData = z.infer<ReturnType<typeof createStepTwoSchema>>;
 
 // Non-blocking sign-up and user creation
 function initiateEmailSignUpAndCreateUser(
@@ -91,9 +103,11 @@ export default function SignupPage() {
       dob: '',
     },
   });
+  
+  const age = dateOfBirth ? differenceInYears(new Date(), new Date(dateOfBirth)) : null;
 
   const stepTwoForm = useForm<StepTwoData>({
-    resolver: zodResolver(stepTwoSchema),
+    resolver: zodResolver(createStepTwoSchema(age)),
     defaultValues: {
       email: '',
       password: '',
@@ -105,8 +119,6 @@ export default function SignupPage() {
     setDateOfBirth(data.dob);
     setStep(2);
   };
-  
-  const age = dateOfBirth ? differenceInYears(new Date(), new Date(dateOfBirth)) : null;
 
   const handleStepTwoSubmit = (data: StepTwoData) => {
     if (!auth || !firestore) return;
