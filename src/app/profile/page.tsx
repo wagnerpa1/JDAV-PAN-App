@@ -2,15 +2,15 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useUser, useDoc, useFirestore, useMemoFirebase, updateDocumentNonBlocking } from '@/firebase';
-import { doc } from 'firebase/firestore';
+import { useUser, useDoc, useFirestore, useMemoFirebase, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
+import { doc, collectionGroup, query, where, getDocs, collection, getDoc } from 'firebase/firestore';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import type { UserProfile } from '@/types';
+import type { UserProfile, Participant, Tour } from '@/types';
 import { Label } from '@/components/ui/label';
 import {
   Dialog,
@@ -22,7 +22,9 @@ import {
   DialogClose,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { PencilIcon } from 'lucide-react';
+import { PencilIcon, CalendarIcon, MapPinIcon } from 'lucide-react';
+import { format } from 'date-fns';
+import Link from 'next/link';
 
 
 function EditNameDialog({ userProfile, userDocRef }: { userProfile: UserProfile, userDocRef: any }) {
@@ -91,6 +93,93 @@ function EditNameDialog({ userProfile, userDocRef }: { userProfile: UserProfile,
     )
 }
 
+function MyTours({ userId }: { userId: string }) {
+  const [tours, setTours] = useState<Tour[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const firestore = useFirestore();
+
+  useEffect(() => {
+    async function fetchUserTours() {
+      if (!userId || !firestore) {
+        setIsLoading(false);
+        return;
+      }
+      try {
+        setIsLoading(true);
+        const participationsQuery = query(
+          collectionGroup(firestore, 'participants'),
+          where('userId', '==', userId)
+        );
+        const querySnapshot = await getDocs(participationsQuery);
+        const tourIds = querySnapshot.docs.map(doc => doc.data().tourId);
+
+        if (tourIds.length > 0) {
+          const toursData: Tour[] = [];
+          for (const tourId of tourIds) {
+            const tourDocRef = doc(firestore, 'tours', tourId);
+            const tourDocSnap = await getDoc(tourDocRef);
+            if (tourDocSnap.exists()) {
+              toursData.push({ id: tourDocSnap.id, ...tourDocSnap.data() } as Tour);
+            }
+          }
+          setTours(toursData);
+        } else {
+          setTours([]);
+        }
+      } catch (error) {
+        console.error("Error fetching user's tours:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    fetchUserTours();
+  }, [userId, firestore]);
+
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        <Skeleton className="h-24 w-full rounded-lg" />
+        <Skeleton className="h-24 w-full rounded-lg" />
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <h2 className="text-2xl font-bold mb-4">My Registered Tours</h2>
+      {tours.length > 0 ? (
+        <div className="space-y-4">
+          {tours.map(tour => (
+             <Link key={tour.id} href={`/tours/${tour.id}`} className="block hover:no-underline group">
+                <Card className="shadow-md hover:shadow-lg transition-shadow duration-300 rounded-xl group-hover:border-primary">
+                    <CardHeader>
+                        <CardTitle className="text-xl font-semibold group-hover:text-primary transition-colors">
+                        {tour.title}
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="grid gap-2 text-muted-foreground">
+                        <div className="flex items-center gap-2">
+                            <MapPinIcon className="h-4 w-4" />
+                            <span>{tour.location}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <CalendarIcon className="h-4 w-4" />
+                            <span>{format(new Date(tour.startDate), 'PPP')}</span>
+                        </div>
+                    </CardContent>
+                </Card>
+            </Link>
+          ))}
+        </div>
+      ) : (
+        <p className="text-muted-foreground">You are not registered for any upcoming tours.</p>
+      )}
+    </div>
+  );
+}
+
+
 export default function ProfilePage() {
   const { user, isUserLoading } = useUser();
   const router = useRouter();
@@ -134,6 +223,9 @@ export default function ProfilePage() {
                 <CardContent className="space-y-4 pt-6">
                     <Skeleton className="h-10 w-full" />
                 </CardContent>
+                 <CardFooter className="mt-6">
+                     <Skeleton className="h-24 w-full" />
+                </CardFooter>
             </Card>
         </div>
       </div>
@@ -161,7 +253,7 @@ export default function ProfilePage() {
                     <AvatarImage src={userProfile.profilePictureUrl} alt="Profile picture" />
                     <AvatarFallback>{getInitials(userProfile.name)}</AvatarFallback>
                 </Avatar>
-                <div className="flex items-center gap-2">
+                <div className="flex w-full justify-center items-center gap-2">
                     <CardTitle className="text-2xl">{userProfile.name}</CardTitle>
                     <EditNameDialog userProfile={userProfile} userDocRef={userDocRef}/>
                 </div>
@@ -176,6 +268,9 @@ export default function ProfilePage() {
                     <p className="text-xs text-muted-foreground">Your email address cannot be changed.</p>
                </div>
             </CardContent>
+            <CardFooter className="flex flex-col items-start mt-6">
+                 {user && <MyTours userId={user.uid} />}
+            </CardFooter>
         </Card>
       </div>
     </div>
