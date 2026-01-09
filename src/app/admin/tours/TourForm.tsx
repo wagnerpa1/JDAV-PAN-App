@@ -79,9 +79,9 @@ export function TourForm({ existingTour }: TourFormProps) {
       const { startDate, endDate, registrationDeadline, ...rest } = existingTour;
       form.reset({
         ...rest,
-        startDate: new Date(startDate).toISOString().split('T')[0],
-        endDate: new Date(endDate).toISOString().split('T')[0],
-        registrationDeadline: new Date(registrationDeadline).toISOString().split('T')[0],
+        startDate: startDate ? new Date(startDate).toISOString().split('T')[0] : '',
+        endDate: endDate ? new Date(endDate).toISOString().split('T')[0] : '',
+        registrationDeadline: registrationDeadline ? new Date(registrationDeadline).toISOString().split('T')[0] : '',
       });
     }
   }, [existingTour, form]);
@@ -275,5 +275,3 @@ export function TourForm({ existingTour }: TourFormProps) {
     </Form>
   );
 }
-
-    
