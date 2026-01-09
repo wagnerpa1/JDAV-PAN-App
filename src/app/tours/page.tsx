@@ -18,6 +18,7 @@ export default function ToursPage() {
   // Memoize the Firestore query to prevent re-creating it on every render.
   // This is critical for performance and to avoid infinite loops in useCollection.
   const toursQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
     const today = new Date().toISOString();
     return query(
       collection(firestore, 'tours'),
@@ -99,5 +100,3 @@ export default function ToursPage() {
     </div>
   );
 }
-
-    

@@ -19,8 +19,8 @@ import {
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { PackageIcon, AlertTriangleIcon, UserIcon, MountainIcon, CalendarIcon, ArrowLeftIcon, CheckIcon, XIcon } from 'lucide-react';
-import type { Material, MaterialReservation, Tour, UserProfile } from '@/types';
+import { PackageIcon, AlertTriangleIcon, UserIcon, CalendarIcon, ArrowLeftIcon, CheckIcon, XIcon } from 'lucide-react';
+import type { Material, MaterialReservation, UserProfile } from '@/types';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -129,6 +129,7 @@ function MaterialReservationsList({ materialId }: { materialId: string }) {
   const firestore = useFirestore();
 
   const allReservationsQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
     return query(
       collectionGroup(firestore, 'materialReservations'),
       where('materialId', '==', materialId),

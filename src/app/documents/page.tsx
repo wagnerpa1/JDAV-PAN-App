@@ -132,26 +132,27 @@ function AdminDocumentUploader({
   );
 }
 
-function DeleteDocumentButton({ document }: { document: Document }) {
+function DeleteDocumentButton({ document: docData }: { document: Document }) {
   const { toast } = useToast();
   const firestore = useFirestore();
 
   const handleDelete = async () => {
+    if (!firestore || !docData) return;
     try {
       const storage = getStorage();
       // Create a reference to the file to delete
-      const fileRef = ref(storage, `documents/${document.name}`);
+      const fileRef = ref(storage, `documents/${docData.name}`);
       
       // Delete the file from Storage
       await deleteObject(fileRef);
 
       // Delete the Firestore document
-      const docRef = doc(firestore, 'documents', document.id);
+      const docRef = doc(firestore, 'documents', docData.id);
       deleteDocumentNonBlocking(docRef);
 
       toast({
         title: 'Document Deleted',
-        description: `${document.name} has been successfully deleted.`,
+        description: `${docData.name} has been successfully deleted.`,
       });
     } catch (error: any) {
       console.error('Error deleting document:', error);
@@ -177,7 +178,7 @@ function DeleteDocumentButton({ document }: { document: Document }) {
           <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
           <AlertDialogDescription>
             This action cannot be undone. This will permanently delete the
-            document <span className="font-bold">{document.name}</span>.
+            document <span className="font-bold">{docData.name}</span>.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
@@ -196,15 +197,17 @@ export default function DocumentsPage() {
   const firestore = useFirestore();
 
   const userDocRef = useMemoFirebase(
-    () => (user ? doc(firestore, 'users', user.uid) : null),
+    () => (user && firestore ? doc(firestore, 'users', user.uid) : null),
     [firestore, user]
   );
   const { data: userProfile, isLoading: isProfileLoading } =
     useDoc<UserProfile>(userDocRef);
 
   const documentsQuery = useMemoFirebase(
-    () =>
-      query(collection(firestore, 'documents'), orderBy('uploadedAt', 'desc')),
+    () => {
+      if (!firestore) return null;
+      return query(collection(firestore, 'documents'), orderBy('uploadedAt', 'desc'))
+    },
     [firestore]
   );
   const {

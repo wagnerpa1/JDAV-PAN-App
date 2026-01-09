@@ -18,8 +18,6 @@ import { Textarea } from '@/components/ui/textarea';
 import {
   Card,
   CardContent,
-  CardFooter,
-  CardHeader,
 } from '@/components/ui/card';
 import {
   Form,
@@ -57,7 +55,7 @@ function PostForm() {
   const { user } = useUser();
   const { toast } = useToast();
   
-  const userProfileRef = useMemoFirebase(() => user ? doc(firestore, 'users', user.uid) : null, [user, firestore]);
+  const userProfileRef = useMemoFirebase(() => (user && firestore ? doc(firestore, 'users', user.uid) : null), [user, firestore]);
   const { data: userProfile } = useDoc<UserProfile>(userProfileRef);
 
   const form = useForm<PostFormData>({
@@ -87,15 +85,20 @@ function PostForm() {
   };
 
   if (!user) {
-    return null; // Don't show form if not logged in
+    return (
+        <Card className="mb-8 shadow-lg">
+            <CardContent className="p-6 text-center">
+                <p className="text-muted-foreground">
+                    <Link href="/login" className="text-primary hover:underline font-semibold">Sign in</Link> to post a note on the community board.
+                </p>
+            </CardContent>
+        </Card>
+    );
   }
 
   return (
     <Card className="mb-8 shadow-lg sticky top-4 z-10">
-      <CardHeader>
-        <h2 className="text-xl font-semibold">Post a New Note</h2>
-      </CardHeader>
-      <CardContent>
+      <CardContent className="p-6">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
@@ -114,10 +117,12 @@ function PostForm() {
                 </FormItem>
               )}
             />
-            <Button type="submit" disabled={form.formState.isSubmitting}>
-              <SendIcon className="mr-2" />
-              Post Note
-            </Button>
+            <div className="flex justify-end">
+                <Button type="submit" disabled={form.formState.isSubmitting}>
+                    <SendIcon className="mr-2 h-4 w-4" />
+                    Post Note
+                </Button>
+            </div>
           </form>
         </Form>
       </CardContent>
@@ -129,7 +134,10 @@ export default function NewsPage() {
   const firestore = useFirestore();
 
   const postsQuery = useMemoFirebase(
-    () => query(collection(firestore, 'posts'), orderBy('createdAt', 'desc')),
+    () => {
+      if (!firestore) return null;
+      return query(collection(firestore, 'posts'), orderBy('createdAt', 'desc'))
+    },
     [firestore]
   );
   const {

@@ -9,6 +9,7 @@ import {
   useUser,
   useCollection,
   setDocumentNonBlocking,
+  deleteDocumentNonBlocking,
 } from '@/firebase';
 import { doc, collection, query } from 'firebase/firestore';
 import {
@@ -31,12 +32,24 @@ import {
   ClockIcon,
   TrendingUpIcon,
   EuroIcon,
-  CalendarClockIcon
+  CalendarClockIcon,
+  UserX,
 } from 'lucide-react';
 import { format, isSameDay, isPast } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import type { Tour, UserProfile, Participant } from '@/types';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 
 function TourDetailsSkeleton() {
   return (
@@ -73,25 +86,31 @@ export default function TourDetailPage() {
   const tourId = id as string;
 
   const tourDocRef = useMemoFirebase(
-    () => doc(firestore, 'tours', tourId),
+    () => {
+      if (!firestore) return null;
+      return doc(firestore, 'tours', tourId)
+    },
     [firestore, tourId]
   );
   const { data: tour, isLoading, error } = useDoc<Tour>(tourDocRef);
 
   const leaderDocRef = useMemoFirebase(
-    () => (tour?.leaderId ? doc(firestore, 'users', tour.leaderId) : null),
+    () => (tour?.leaderId && firestore ? doc(firestore, 'users', tour.leaderId) : null),
     [firestore, tour]
   );
   const { data: leader } = useDoc<UserProfile>(leaderDocRef);
 
   const participantDocRef = useMemoFirebase(() => {
-    if (!user) return null;
+    if (!user || !firestore) return null;
     return doc(firestore, `tours/${tourId}/participants/${user.uid}`);
   }, [firestore, tourId, user]);
   const { data: userParticipation } = useDoc<Participant>(participantDocRef);
 
   const participantsQuery = useMemoFirebase(
-    () => query(collection(firestore, 'tours', tourId, 'participants')),
+    () => {
+      if (!firestore) return null;
+      return query(collection(firestore, 'tours', tourId, 'participants'))
+    },
     [firestore, tourId]
   );
   const { data: participants } = useCollection<Participant>(participantsQuery);
@@ -106,7 +125,7 @@ export default function TourDetailPage() {
   };
 
   const handleParticipate = () => {
-    if (!user || !tour) return;
+    if (!user || !tour || !firestore) return;
 
     const participantRef = doc(firestore, `tours/${tourId}/participants/${user.uid}`);
     const participantData: Participant = {
@@ -122,6 +141,19 @@ export default function TourDetailPage() {
       description: `You have successfully joined the "${tour.title}" tour.`,
     });
   };
+
+  const handleLeaveTour = () => {
+    if (!user || !tour || !firestore) return;
+
+    const participantRef = doc(firestore, `tours/${tourId}/participants/${user.uid}`);
+    deleteDocumentNonBlocking(participantRef);
+
+    toast({
+        title: "You've left the tour",
+        description: `You are no longer participating in "${tour.title}".`,
+        variant: "destructive"
+    });
+  }
 
   if (isLoading) {
     return (
@@ -164,10 +196,28 @@ export default function TourDetailPage() {
   const getParticipationButton = () => {
     if (isParticipating) {
       return (
-        <Button disabled className="w-full text-lg py-6">
-          <UserCheckIcon className="mr-2 h-5 w-5" />
-          You are participating
-        </Button>
+        <AlertDialog>
+            <AlertDialogTrigger asChild>
+                <Button variant="destructive" className="w-full text-lg py-6">
+                    <UserX className="mr-2 h-5 w-5" />
+                    Leave Tour
+                </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Are you sure you want to leave?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        This will remove you from the participant list for this tour. You can rejoin as long as there is space and the registration deadline has not passed.
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleLeaveTour} className="bg-destructive hover:bg-destructive/90">
+                        Leave Tour
+                    </AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
       );
     }
     if (isDeadlinePassed) {
@@ -186,6 +236,7 @@ export default function TourDetailPage() {
     }
     return (
       <Button onClick={handleParticipate} className="w-full text-lg py-6">
+        <UserCheckIcon className="mr-2 h-5 w-5" />
         Participate
       </Button>
     );
@@ -220,7 +271,7 @@ export default function TourDetailPage() {
             </div>
             <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
                 <UsersIcon className="h-5 w-5 text-primary" />
-                <span className="font-medium">{tour.participantLimit} participant limit</span>
+                <span className="font-medium">{participants?.length || 0} / {tour.participantLimit} participants</span>
             </div>
             <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
                 <InfoIcon className="h-5 w-5 text-primary" />
@@ -253,5 +304,3 @@ export default function TourDetailPage() {
     </div>
   );
 }
-
-    

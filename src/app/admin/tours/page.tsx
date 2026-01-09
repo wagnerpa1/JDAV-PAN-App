@@ -58,6 +58,7 @@ function DeleteTourDialog({ tour, onOpenChange, open }: { tour: Tour, open: bool
   const { toast } = useToast();
 
   const handleDelete = () => {
+    if (!firestore || !tour) return;
     const tourRef = doc(firestore, 'tours', tour.id);
     deleteDocumentNonBlocking(tourRef);
     toast({
@@ -95,7 +96,10 @@ export default function TourManagementPage() {
   const [selectedTour, setSelectedTour] = useState<Tour | null>(null);
 
   const toursQuery = useMemoFirebase(
-    () => query(collection(firestore, 'tours'), orderBy('startDate', 'desc')),
+    () => {
+      if (!firestore) return null;
+      return query(collection(firestore, 'tours'), orderBy('startDate', 'desc'))
+    },
     [firestore]
   );
 

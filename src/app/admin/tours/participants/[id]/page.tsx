@@ -31,7 +31,7 @@ import { Button } from '@/components/ui/button';
 function ParticipantListItem({ userId }: { userId: string }) {
   const firestore = useFirestore();
   const userDocRef = useMemoFirebase(
-    () => (userId ? doc(firestore, 'users', userId) : null),
+    () => (userId && firestore ? doc(firestore, 'users', userId) : null),
     [firestore, userId]
   );
   const { data: userProfile, isLoading } = useDoc<UserProfile>(userDocRef);
@@ -69,7 +69,10 @@ function ParticipantList({ tourId }: { tourId: string }) {
   const firestore = useFirestore();
 
   const participantsQuery = useMemoFirebase(
-    () => query(collection(firestore, 'tours', tourId, 'participants'), limit(50)),
+    () => {
+      if (!firestore) return null;
+      return query(collection(firestore, 'tours', tourId, 'participants'), limit(50));
+    },
     [firestore, tourId]
   );
   const { data: participants, isLoading, error } = useCollection<Participant>(participantsQuery);
@@ -109,7 +112,10 @@ export default function TourParticipantsPage() {
   const tourId = id as string;
 
   const tourDocRef = useMemoFirebase(
-    () => doc(firestore, 'tours', tourId),
+    () => {
+      if (!firestore) return null;
+      return doc(firestore, 'tours', tourId)
+    },
     [firestore, tourId]
   );
 
