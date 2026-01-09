@@ -204,7 +204,7 @@ export default function TourManagementPage() {
                           <DropdownMenuContent align="end">
                             <DropdownMenuLabel>Actions</DropdownMenuLabel>
                              <DropdownMenuItem asChild>
-                                <Link href={`/admin/tours/edit/${tour.id}`} className="flex items-center">
+                                <Link href={`/admin/tours/participants/${tour.id}`} className="flex items-center">
                                     <UsersIcon className="mr-2 h-4 w-4" />
                                     <span>View Participants</span>
                                 </Link>
