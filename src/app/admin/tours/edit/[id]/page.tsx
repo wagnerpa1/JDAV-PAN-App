@@ -27,6 +27,44 @@ import type { Tour, UserProfile, Participant } from '@/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 
+function ParticipantListItem({ userId }: { userId: string }) {
+  const firestore = useFirestore();
+  const userDocRef = useMemoFirebase(
+    () => (userId ? doc(firestore, 'users', userId) : null),
+    [firestore, userId]
+  );
+  const { data: userProfile, isLoading } = useDoc<UserProfile>(userDocRef);
+
+  const getInitials = (email?: string) => {
+    if (!email) return '??';
+    return email.substring(0, 2).toUpperCase();
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center gap-4">
+        <Skeleton className="h-10 w-10 rounded-full" />
+        <Skeleton className="h-5 w-48" />
+      </div>
+    );
+  }
+
+  if (!userProfile) {
+    return null; // Or some fallback UI for a user not found
+  }
+
+  return (
+    <div className="flex items-center gap-4">
+      <Avatar>
+        <AvatarImage src={userProfile?.profilePictureUrl} />
+        <AvatarFallback>{getInitials(userProfile?.email)}</AvatarFallback>
+      </Avatar>
+      <span className="font-medium">{userProfile?.email}</span>
+    </div>
+  );
+}
+
+
 function ParticipantList({ tourId }: { tourId: string }) {
   const firestore = useFirestore();
 
@@ -35,22 +73,7 @@ function ParticipantList({ tourId }: { tourId: string }) {
     [firestore, tourId]
   );
   const { data: participants, isLoading, error } = useCollection<Participant>(participantsQuery);
-
-  const userDocs = useMemo(() => {
-    if (!participants) return [];
-    return participants.map(p => doc(firestore, 'users', p.userId));
-  }, [participants, firestore]);
-
-  // This is a simplified way to fetch user profiles for participants.
-  // In a real-world app with many participants, this would need optimization.
-  const participantProfiles = userDocs.map(docRef => useDoc<UserProfile>(docRef).data);
   
-  const getInitials = (email?: string) => {
-    if (!email) return '??';
-    return email.substring(0, 2).toUpperCase();
-  };
-
-
   return (
     <Card className="mt-8">
       <CardHeader>
@@ -63,19 +86,13 @@ function ParticipantList({ tourId }: { tourId: string }) {
       <CardContent>
         {isLoading && <Skeleton className="h-10 w-full" />}
         {error && <Alert variant="destructive"><AlertTriangleIcon className="h-4 w-4" /><AlertTitle>Error</AlertTitle><AlertDescription>Could not load participants.</AlertDescription></Alert>}
-        {!isLoading && participants && participantProfiles && (
+        {!isLoading && participants && (
           <div className="space-y-4">
             {participants.length === 0 ? (
               <p className="text-muted-foreground">No one has joined this tour yet.</p>
             ) : (
-              participantProfiles.filter(p => p).map((profile, index) => (
-                <div key={profile?.id || index} className="flex items-center gap-4">
-                  <Avatar>
-                    <AvatarImage src={profile?.profilePictureUrl} />
-                    <AvatarFallback>{getInitials(profile?.email)}</AvatarFallback>
-                  </Avatar>
-                  <span className="font-medium">{profile?.email}</span>
-                </div>
+              participants.map((p) => (
+                <ParticipantListItem key={p.userId} userId={p.userId} />
               ))
             )}
           </div>
