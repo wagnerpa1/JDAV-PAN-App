@@ -12,12 +12,89 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import type { UserProfile } from '@/types';
 import { Label } from '@/components/ui/label';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogClose,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import { PencilIcon } from 'lucide-react';
+
+
+function EditNameDialog({ userProfile, userDocRef }: { userProfile: UserProfile, userDocRef: any }) {
+    const [name, setName] = useState(userProfile.name);
+    const { toast } = useToast();
+    const [isOpen, setIsOpen] = useState(false);
+
+    const handleSaveChanges = () => {
+        if (!userDocRef || name === userProfile.name) {
+            setIsOpen(false);
+            return;
+        };
+
+        updateDocumentNonBlocking(userDocRef, { name });
+        toast({
+            title: 'Profile Updated',
+            description: 'Your name has been successfully updated.'
+        });
+        setIsOpen(false);
+    }
+
+    useEffect(() => {
+        if(isOpen) {
+            setName(userProfile.name);
+        }
+    }, [isOpen, userProfile.name])
+
+    return (
+        <Dialog open={isOpen} onOpenChange={setIsOpen}>
+            <DialogTrigger asChild>
+                 <Button variant="ghost" size="icon">
+                    <PencilIcon className="h-4 w-4" />
+                    <span className="sr-only">Edit Name</span>
+                </Button>
+            </DialogTrigger>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Edit Display Name</DialogTitle>
+                    <DialogDescription>
+                        Make changes to your display name here. Click save when you're done.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                    <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="name" className="text-right">
+                        Name
+                        </Label>
+                        <Input
+                        id="name"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        className="col-span-3"
+                        />
+                    </div>
+                </div>
+                <DialogFooter>
+                    <DialogClose asChild>
+                        <Button type="button" variant="secondary">
+                            Cancel
+                        </Button>
+                    </DialogClose>
+                     <Button type="submit" onClick={handleSaveChanges}>Save changes</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    )
+}
 
 export default function ProfilePage() {
   const { user, isUserLoading } = useUser();
   const router = useRouter();
   const firestore = useFirestore();
-  const { toast } = useToast();
 
   const userDocRef = useMemoFirebase(() => {
     if (!user) return null;
@@ -26,21 +103,11 @@ export default function ProfilePage() {
 
   const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userDocRef);
 
-  const [name, setName] = useState('');
-  const [isDirty, setIsDirty] = useState(false);
-
   useEffect(() => {
     if (!isUserLoading && !user) {
       router.push('/login');
     }
   }, [isUserLoading, user, router]);
-
-  useEffect(() => {
-    if (userProfile?.name) {
-      setName(userProfile.name);
-      setIsDirty(false);
-    }
-  }, [userProfile]);
 
   const getInitials = (name?: string) => {
     if (!name) return '??';
@@ -51,22 +118,6 @@ export default function ProfilePage() {
       .substring(0, 2)
       .toUpperCase();
   };
-
-  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setName(e.target.value);
-    setIsDirty(e.target.value !== userProfile?.name);
-  };
-  
-  const handleSaveChanges = () => {
-    if (!userDocRef || !isDirty) return;
-
-    updateDocumentNonBlocking(userDocRef, { name });
-    toast({
-        title: 'Profile Updated',
-        description: 'Your name has been successfully updated.'
-    });
-    setIsDirty(false);
-  }
 
   const isLoading = isUserLoading || isProfileLoading;
 
@@ -80,9 +131,8 @@ export default function ProfilePage() {
                     <Skeleton className="h-8 w-48 mx-auto mb-2" />
                     <Skeleton className="h-4 w-32 mx-auto" />
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-4 pt-6">
                     <Skeleton className="h-10 w-full" />
-                    <Skeleton className="h-6 w-full" />
                 </CardContent>
             </Card>
         </div>
@@ -111,36 +161,23 @@ export default function ProfilePage() {
                     <AvatarImage src={userProfile.profilePictureUrl} alt="Profile picture" />
                     <AvatarFallback>{getInitials(userProfile.name)}</AvatarFallback>
                 </Avatar>
-                <CardTitle className="text-2xl">{userProfile.name}</CardTitle>
+                <div className="flex items-center gap-2">
+                    <CardTitle className="text-2xl">{userProfile.name}</CardTitle>
+                    <EditNameDialog userProfile={userProfile} userDocRef={userDocRef}/>
+                </div>
                 <CardDescription className="capitalize bg-secondary text-secondary-foreground px-2 py-1 rounded-md text-sm">
                     {userProfile.role}
                 </CardDescription>
             </CardHeader>
             <CardContent className="mt-4 space-y-6">
-               <div className="space-y-2">
-                 <Label htmlFor="name">Display Name</Label>
-                 <Input 
-                   id="name" 
-                   value={name} 
-                   onChange={handleNameChange}
-                   placeholder="Your display name"
-                 />
-               </div>
                 <div className="space-y-2">
                     <Label htmlFor="email">Email</Label>
                     <Input id="email" value={userProfile.email} disabled />
                     <p className="text-xs text-muted-foreground">Your email address cannot be changed.</p>
                </div>
             </CardContent>
-            <CardFooter>
-                <Button onClick={handleSaveChanges} disabled={!isDirty}>
-                    Save Changes
-                </Button>
-            </CardFooter>
         </Card>
       </div>
     </div>
   );
 }
-
-    
