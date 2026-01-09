@@ -12,7 +12,8 @@ import { AlertTriangleIcon } from 'lucide-react';
 interface Tour {
   id: string;
   title: string;
-  date: string;
+  startDate: string;
+  endDate: string;
   location: string;
   description: string;
   participantLimit: number;
@@ -58,3 +59,5 @@ export default function EditTourPage() {
     </div>
   );
 }
+
+    

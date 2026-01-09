@@ -27,12 +27,14 @@ import {
   AlertTriangleIcon,
   PencilIcon,
 } from 'lucide-react';
+import { format } from 'date-fns';
 
 interface Tour {
   id: string;
   title: string;
   location: string;
-  date: string; // ISO string
+  startDate: string; // ISO string
+  endDate: string; // ISO string
   participantLimit: number;
 }
 
@@ -40,18 +42,19 @@ export default function TourManagementPage() {
   const firestore = useFirestore();
 
   const toursQuery = useMemoFirebase(
-    () => query(collection(firestore, 'tours'), orderBy('date', 'desc')),
+    () => query(collection(firestore, 'tours'), orderBy('startDate', 'desc')),
     [firestore]
   );
 
   const { data: tours, isLoading, error } = useCollection<Tour>(toursQuery);
 
-  const formatDate = (isoString: string) => {
-    return new Date(isoString).toLocaleDateString('de-DE', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    });
+  const formatDateRange = (startDateIso: string, endDateIso: string) => {
+    const start = new Date(startDateIso);
+    const end = new Date(endDateIso);
+    if (start.toDateString() === end.toDateString()) {
+      return format(start, 'PPP');
+    }
+    return `${format(start, 'PPP')} - ${format(end, 'PPP')}`;
   };
 
   return (
@@ -84,7 +87,7 @@ export default function TourManagementPage() {
               <TableRow>
                 <TableHead>Title</TableHead>
                 <TableHead>Location</TableHead>
-                <TableHead>Date</TableHead>
+                <TableHead>Dates</TableHead>
                 <TableHead>Limit</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
@@ -130,7 +133,7 @@ export default function TourManagementPage() {
                   <TableRow key={tour.id}>
                     <TableCell className="font-medium">{tour.title}</TableCell>
                     <TableCell>{tour.location}</TableCell>
-                    <TableCell>{formatDate(tour.date)}</TableCell>
+                    <TableCell>{formatDateRange(tour.startDate, tour.endDate)}</TableCell>
                     <TableCell>{tour.participantLimit}</TableCell>
                     <TableCell className="text-right">
                       <Button asChild variant="ghost" size="icon">
@@ -148,3 +151,5 @@ export default function TourManagementPage() {
     </div>
   );
 }
+
+    

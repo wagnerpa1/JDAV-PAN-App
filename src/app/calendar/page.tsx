@@ -5,7 +5,6 @@ import {
   collection,
   query,
   where,
-  Timestamp,
   orderBy,
 } from 'firebase/firestore';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
@@ -21,14 +20,17 @@ import {
   startOfDay,
   endOfDay,
   format,
+  eachDayOfInterval,
+  isSameDay,
 } from 'date-fns';
-import type { DayModifiers } from 'react-day-picker';
+import type { DayModifiers, DayPicker } from 'react-day-picker';
 
 interface Tour {
   id: string;
   title: string;
   location: string;
-  date: string; // ISO string
+  startDate: string; // ISO string
+  endDate: string; // ISO string
 }
 
 export default function CalendarPage() {
@@ -41,27 +43,37 @@ export default function CalendarPage() {
 
   const toursQuery = useMemoFirebase(() => {
     if (!firestore) return null;
+    // Query for tours that *end* after the start of the month
+    // and *start* before the end of the month.
     return query(
       collection(firestore, 'tours'),
-      where('date', '>=', monthStart.toISOString()),
-      where('date', '<=', monthEnd.toISOString()),
-      orderBy('date', 'asc')
+      where('endDate', '>=', monthStart.toISOString()),
+      where('startDate', '<=', monthEnd.toISOString()),
+      orderBy('startDate', 'asc')
     );
   }, [firestore, monthStart, monthEnd]);
 
   const { data: tours, isLoading, error } = useCollection<Tour>(toursQuery);
 
   const tourDays = useMemo(() => {
-    return tours?.map((tour) => new Date(tour.date)) || [];
+    if (!tours) return [];
+    const allTourDays: Date[] = [];
+    tours.forEach(tour => {
+      const tourInterval = eachDayOfInterval({
+        start: new Date(tour.startDate),
+        end: new Date(tour.endDate),
+      });
+      allTourDays.push(...tourInterval);
+    });
+    return allTourDays;
   }, [tours]);
 
   const toursOnSelectedDay = useMemo(() => {
     if (!selectedDay || !tours) return [];
-    const dayStart = startOfDay(selectedDay);
-    const dayEnd = endOfDay(selectedDay);
     return tours.filter((tour) => {
-      const tourDate = new Date(tour.date);
-      return tourDate >= dayStart && tourDate <= dayEnd;
+      const tourStart = startOfDay(new Date(tour.startDate));
+      const tourEnd = endOfDay(new Date(tour.endDate));
+      return selectedDay >= tourStart && selectedDay <= tourEnd;
     });
   }, [selectedDay, tours]);
 
@@ -70,19 +82,21 @@ export default function CalendarPage() {
   };
   
   const handleDayClick = (day: Date, modifiers: DayModifiers) => {
-    if (modifiers.tour) {
+    // Only select the day if there's a tour on it
+    if (tourDays.some(tourDay => isSameDay(day, tourDay))) {
       setSelectedDay(day);
     } else {
       setSelectedDay(undefined);
     }
   };
 
-  const formatDate = (isoString: string) => {
-    return new Date(isoString).toLocaleDateString('de-DE', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    });
+  const formatDateRange = (startDateIso: string, endDateIso: string) => {
+    const start = new Date(startDateIso);
+    const end = new Date(endDateIso);
+    if (isSameDay(start, end)) {
+      return format(start, 'PPP');
+    }
+    return `${format(start, 'PPP')} - ${format(end, 'PPP')}`;
   };
 
   return (
@@ -96,7 +110,7 @@ export default function CalendarPage() {
       
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <Card className="shadow-lg rounded-xl">
-          <CardContent className="p-2 md:p-6">
+          <CardContent className="p-2 md:p-6 flex justify-center">
             <Calendar
               mode="single"
               selected={selectedDay}
@@ -105,8 +119,7 @@ export default function CalendarPage() {
               onMonthChange={handleMonthChange}
               modifiers={{ tour: tourDays }}
               modifiersClassNames={{
-                tour: 'bg-primary text-primary-foreground rounded-full',
-                selected: 'bg-background text-primary border-2 border-primary rounded-full',
+                tour: 'bg-primary/80 text-primary-foreground rounded-full',
               }}
               className="w-full"
             />
@@ -119,7 +132,8 @@ export default function CalendarPage() {
           </h2>
           {isLoading && (
             <div className="space-y-4">
-              <Skeleton className="h-20 w-full" />
+              <Skeleton className="h-24 w-full" />
+              <Skeleton className="h-24 w-full" />
             </div>
           )}
           {error && (
@@ -149,7 +163,7 @@ export default function CalendarPage() {
                         </div>
                         <div className="flex items-center gap-2">
                           <CalendarIcon className="h-4 w-4" />
-                          <span>{formatDate(tour.date)}</span>
+                          <span>{formatDateRange(tour.startDate, tour.endDate)}</span>
                         </div>
                       </CardContent>
                     </Card>
@@ -169,3 +183,5 @@ export default function CalendarPage() {
     </div>
   );
 }
+
+    

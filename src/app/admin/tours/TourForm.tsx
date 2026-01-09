@@ -23,12 +23,19 @@ import { useEffect } from 'react';
 const formSchema = z.object({
   title: z.string().min(5, 'Title must be at least 5 characters.'),
   location: z.string().min(3, 'Location is required.'),
-  date: z.string().refine((val) => !isNaN(Date.parse(val)), {
-    message: 'Please enter a valid date.',
+  startDate: z.string().refine((val) => !isNaN(Date.parse(val)), {
+    message: 'Please enter a valid start date.',
+  }),
+  endDate: z.string().refine((val) => !isNaN(Date.parse(val)), {
+    message: 'Please enter a valid end date.',
   }),
   description: z.string().min(20, 'Description must be at least 20 characters.'),
   participantLimit: z.coerce.number().int().positive('Limit must be a positive number.'),
+}).refine(data => new Date(data.endDate) >= new Date(data.startDate), {
+    message: 'End date must be on or after the start date.',
+    path: ['endDate'],
 });
+
 
 type TourFormData = z.infer<typeof formSchema>;
 
@@ -47,7 +54,8 @@ export function TourForm({ existingTour }: TourFormProps) {
     defaultValues: {
       title: '',
       location: '',
-      date: '',
+      startDate: '',
+      endDate: '',
       description: '',
       participantLimit: 10,
     },
@@ -57,7 +65,8 @@ export function TourForm({ existingTour }: TourFormProps) {
     if (existingTour) {
       form.reset({
         ...existingTour,
-        date: new Date(existingTour.date).toISOString().split('T')[0],
+        startDate: new Date(existingTour.startDate).toISOString().split('T')[0],
+        endDate: new Date(existingTour.endDate).toISOString().split('T')[0],
       });
     }
   }, [existingTour, form]);
@@ -67,7 +76,8 @@ export function TourForm({ existingTour }: TourFormProps) {
 
     const tourData = {
       ...data,
-      date: new Date(data.date).toISOString(),
+      startDate: new Date(data.startDate).toISOString(),
+      endDate: new Date(data.endDate).toISOString(),
       // These are hardcoded for now, but could be dynamic
       ageGroupId: 'adults', 
       leaderId: user.uid,
@@ -123,19 +133,34 @@ export function TourForm({ existingTour }: TourFormProps) {
             </FormItem>
           )}
         />
-        <FormField
-          control={form.control}
-          name="date"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Date</FormLabel>
-              <FormControl>
-                <Input type="date" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <FormField
+            control={form.control}
+            name="startDate"
+            render={({ field }) => (
+                <FormItem>
+                <FormLabel>Start Date</FormLabel>
+                <FormControl>
+                    <Input type="date" {...field} />
+                </FormControl>
+                <FormMessage />
+                </FormItem>
+            )}
+            />
+            <FormField
+            control={form.control}
+            name="endDate"
+            render={({ field }) => (
+                <FormItem>
+                <FormLabel>End Date</FormLabel>
+                <FormControl>
+                    <Input type="date" {...field} />
+                </FormControl>
+                <FormMessage />
+                </FormItem>
+            )}
+            />
+        </div>
         <FormField
           control={form.control}
           name="participantLimit"
@@ -178,3 +203,5 @@ export function TourForm({ existingTour }: TourFormProps) {
     </Form>
   );
 }
+
+    

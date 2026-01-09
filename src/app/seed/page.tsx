@@ -13,7 +13,8 @@ const sampleTours = [
   {
     id: 'tour-1',
     title: "Sunset Hike to Eagle's Peak",
-    date: new Date(new Date().setDate(new Date().getDate() + 7)).toISOString(),
+    startDate: new Date(new Date().setDate(new Date().getDate() + 7)).toISOString(),
+    endDate: new Date(new Date().setDate(new Date().getDate() + 7)).toISOString(),
     location: 'Alpine National Park',
     description: 'A scenic hike to the famous Eagle\'s Peak, timed perfectly to watch the sunset over the mountains. This is a moderately challenging trail suitable for most fitness levels.',
     participantLimit: 20,
@@ -22,10 +23,11 @@ const sampleTours = [
   },
   {
     id: 'tour-2',
-    title: 'Glacier Lake Kayak Adventure',
-    date: new Date(new Date().setDate(new Date().getDate() + 14)).toISOString(),
+    title: '3-Day Glacier Lake Kayak Adventure',
+    startDate: new Date(new Date().setDate(new Date().getDate() + 14)).toISOString(),
+    endDate: new Date(new Date().setDate(new Date().getDate() + 16)).toISOString(),
     location: 'Glacier Lake',
-    description: 'Spend a day kayaking on the crystal-clear waters of Glacier Lake. We will explore hidden coves and enjoy a picnic on a secluded beach. Basic swimming skills required.',
+    description: 'Spend three days kayaking on the crystal-clear waters of Glacier Lake. We will explore hidden coves and enjoy a picnic on a secluded beach. Basic swimming skills required.',
     participantLimit: 15,
     ageGroupId: 'adults',
     leaderId: 'tour-leader-2'
@@ -33,7 +35,8 @@ const sampleTours = [
   {
     id: 'tour-3',
     title: 'Beginner\'s Rock Climbing at Granite Falls',
-    date: new Date(new Date().setDate(new Date().getDate() + 21)).toISOString(),
+    startDate: new Date(new Date().setDate(new Date().getDate() + 21)).toISOString(),
+    endDate: new Date(new Date().setDate(new Date().getDate() + 21)).toISOString(),
     location: 'Granite Falls',
     description: 'Learn the basics of rock climbing and rappelling in a safe and supportive environment. All equipment is provided. No prior experience necessary!',
     participantLimit: 10,
@@ -159,3 +162,5 @@ export default function SeedDataPage() {
     </div>
   );
 }
+
+    

@@ -8,13 +8,15 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { MountainIcon, MapPinIcon, CalendarIcon, AlertTriangleIcon } from 'lucide-react';
+import { format, isSameDay } from 'date-fns';
 
 // Define the shape of a Tour document
 interface Tour {
   id: string;
   title: string;
   location: string;
-  date: string; // Stored as ISO string
+  startDate: string; // Stored as ISO string
+  endDate: string; // Stored as ISO string
 }
 
 export default function ToursPage() {
@@ -26,19 +28,20 @@ export default function ToursPage() {
     const today = new Date().toISOString();
     return query(
       collection(firestore, 'tours'),
-      where('date', '>=', today),
-      orderBy('date', 'asc')
+      where('endDate', '>=', today), // Query for tours that end today or later
+      orderBy('endDate', 'asc')
     );
   }, [firestore]);
 
   const { data: tours, isLoading, error } = useCollection<Tour>(toursQuery);
 
-  const formatDate = (isoString: string) => {
-    return new Date(isoString).toLocaleDateString('de-DE', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    });
+  const formatDateRange = (startDateIso: string, endDateIso: string) => {
+    const start = new Date(startDateIso);
+    const end = new Date(endDateIso);
+    if (isSameDay(start, end)) {
+      return format(start, 'PPP');
+    }
+    return `${format(start, 'PPP')} - ${format(end, 'PPP')}`;
   };
 
   return (
@@ -86,7 +89,7 @@ export default function ToursPage() {
                     </div>
                     <div className="flex items-center gap-2">
                       <CalendarIcon className="h-4 w-4" />
-                      <span>{formatDate(tour.date)}</span>
+                      <span>{formatDateRange(tour.startDate, tour.endDate)}</span>
                     </div>
                   </CardContent>
                 </Card>
@@ -103,3 +106,5 @@ export default function ToursPage() {
     </div>
   );
 }
+
+    

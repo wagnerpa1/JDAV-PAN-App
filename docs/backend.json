@@ -14,9 +14,14 @@
           "type": "string",
           "description": "The title or name of the tour."
         },
-        "date": {
+        "startDate": {
           "type": "string",
-          "description": "The date and time the tour is scheduled to occur.",
+          "description": "The start date and time the tour is scheduled to occur.",
+          "format": "date-time"
+        },
+        "endDate": {
+          "type": "string",
+          "description": "The end date and time the tour is scheduled to occur.",
           "format": "date-time"
         },
         "location": {
@@ -50,7 +55,8 @@
       "required": [
         "id",
         "title",
-        "date",
+        "startDate",
+        "endDate",
         "location",
         "description",
         "participantLimit",
@@ -380,3 +386,5 @@
     "reasoning": "The Firestore structure is designed to efficiently manage tour-related data, material reservations, age groups, and user information for the 'Alpine Connect' application. To ensure security and scalability, I will create root-level collections for `tours`, `materials`, `ageGroups`, `users`, and `documents`. `MaterialReservation` will be a subcollection of both `/users/{userId}` and `/tours/{tourId}`, to make data easily retrievable from both sides, and to avoid `get()` calls in the rules.\n\nThis design promotes Authorization Independence.  For example, `MaterialReservation` documents contain the `userId` and `tourId`, avoiding the need to fetch parent document data for authorization.\n\nThe structure also supports the required QAPs.  `list` operations can be secured at each collection level.  Segregation of concerns allows specific rules for each collection (e.g., only admins can create tours, users can only create reservations for themselves)."
   }
 }
+
+    
