@@ -1,11 +1,12 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MountainIcon, TentIcon, CalendarDaysIcon } from "lucide-react"; // Example icons
+import Link from "next/link";
 
 export default function Home() {
   const dashboardItems = [
-    { title: "Upcoming Tours", icon: <MountainIcon className="h-6 w-6 text-primary" />, description: "View and manage your upcoming tours." },
-    { title: "Material Reservations", icon: <TentIcon className="h-6 w-6 text-primary" />, description: "Reserve equipment for your next adventure." },
-    { title: "Latest Documents", icon: <CalendarDaysIcon className="h-6 w-6 text-primary" />, description: "Access important documents and guidelines." },
+    { title: "Upcoming Tours", href: "/tours", icon: <MountainIcon className="h-6 w-6 text-primary" />, description: "View and manage your upcoming tours." },
+    { title: "Material Reservations", href: "/reservations", icon: <TentIcon className="h-6 w-6 text-primary" />, description: "Reserve equipment for your next adventure." },
+    { title: "Latest Documents", href: "/documents", icon: <CalendarDaysIcon className="h-6 w-6 text-primary" />, description: "Access important documents and guidelines." },
   ];
 
   return (
@@ -25,15 +26,17 @@ export default function Home() {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 w-full max-w-6xl">
         {dashboardItems.map((item, index) => (
-          <Card key={index} className="shadow-lg hover:shadow-xl transition-shadow duration-300 rounded-xl">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-lg font-semibold">{item.title}</CardTitle>
-              {item.icon}
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">{item.description}</p>
-            </CardContent>
-          </Card>
+          <Link key={index} href={item.href} className="block hover:no-underline">
+            <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 rounded-xl h-full">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-lg font-semibold">{item.title}</CardTitle>
+                {item.icon}
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">{item.description}</p>
+              </CardContent>
+            </Card>
+          </Link>
         ))}
       </div>
     </main>
