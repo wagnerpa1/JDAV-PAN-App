@@ -2,15 +2,15 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useUser, useDoc, useFirestore, useMemoFirebase, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
-import { doc, collectionGroup, query, where, getDocs, collection, getDoc } from 'firebase/firestore';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { useUser, useDoc, useFirestore, useMemoFirebase, updateDocumentNonBlocking } from '@/firebase';
+import { doc } from 'firebase/firestore';
+import { Card, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import type { UserProfile, Tour } from '@/types';
+import type { UserProfile } from '@/types';
 import { Label } from '@/components/ui/label';
 import {
   Dialog,
@@ -22,9 +22,7 @@ import {
   DialogClose,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { PencilIcon, CalendarIcon, MapPinIcon, Trash2Icon } from 'lucide-react';
-import { format } from 'date-fns';
-import Link from 'next/link';
+import { PencilIcon } from 'lucide-react';
 
 
 function EditNameDialog({ userProfile, userDocRef }: { userProfile: UserProfile, userDocRef: any }) {
@@ -91,90 +89,6 @@ function EditNameDialog({ userProfile, userDocRef }: { userProfile: UserProfile,
             </DialogContent>
         </Dialog>
     )
-}
-
-function MyTours({ userId }: { userId: string }) {
-  const firestore = useFirestore();
-  const participantsQuery = useMemoFirebase(
-    () =>
-      userId
-        ? query(collectionGroup(firestore, 'participants'), where('userId', '==', userId))
-        : null,
-    [firestore, userId]
-  );
-  const { data: participations, isLoading: isLoadingParticipations } = useCollection<any>(participantsQuery);
-
-  const [tours, setTours] = useState<Tour[]>([]);
-  const [isLoadingTours, setIsLoadingTours] = useState(true);
-
-  useEffect(() => {
-    async function fetchTours() {
-      if (!participations) {
-        if (!isLoadingParticipations) {
-          setTours([]);
-          setIsLoadingTours(false);
-        }
-        return;
-      }
-      setIsLoadingTours(true);
-      const tourIds = participations.map(p => p.tourId);
-      if (tourIds.length > 0) {
-        const tourPromises = tourIds.map(id => getDoc(doc(firestore, 'tours', id)));
-        const tourSnaps = await Promise.all(tourPromises);
-        const toursData = tourSnaps.map(snap => ({ id: snap.id, ...snap.data() } as Tour));
-        setTours(toursData.filter(t => t.title)); // Filter out potential empty docs
-      } else {
-        setTours([]);
-      }
-      setIsLoadingTours(false);
-    }
-    fetchTours();
-  }, [participations, firestore, isLoadingParticipations]);
-
-
-  const isLoading = isLoadingParticipations || isLoadingTours;
-
-  if (isLoading) {
-    return (
-      <div className="space-y-4">
-        <Skeleton className="h-24 w-full rounded-lg" />
-        <Skeleton className="h-24 w-full rounded-lg" />
-      </div>
-    );
-  }
-
-  return (
-    <div>
-      <h2 className="text-2xl font-bold mb-4">My Registered Tours</h2>
-      {tours.length > 0 ? (
-        <div className="space-y-4">
-          {tours.map(tour => (
-             <Link key={tour.id} href={`/tours/${tour.id}`} className="block hover:no-underline group">
-                <Card className="shadow-md hover:shadow-lg transition-shadow duration-300 rounded-xl group-hover:border-primary">
-                    <CardHeader>
-                        <CardTitle className="text-xl font-semibold group-hover:text-primary transition-colors">
-                        {tour.title}
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent className="grid gap-2 text-muted-foreground">
-                        <div className="flex items-center gap-2">
-                            <MapPinIcon className="h-4 w-4" />
-                            <span>{tour.location}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <CalendarIcon className="h-4 w-4" />
-                            <span>{format(new Date(tour.startDate), 'PPP')}</span>
-                        </div>
-                    </CardContent>
-                </Card>
-            </Link>
-          ))}
-        </div>
-      ) : (
-        <p className="text-muted-foreground">You are not registered for any upcoming tours.</p>
-      )}
-    </div>
-  );
 }
 
 
@@ -257,9 +171,6 @@ export default function ProfilePage() {
                     {userProfile.role}
                 </CardDescription>
             </CardHeader>
-            <CardFooter className="flex flex-col items-start mt-6 p-6">
-                 {user && <MyTours userId={user.uid} />}
-            </CardFooter>
         </Card>
       </div>
     </div>
