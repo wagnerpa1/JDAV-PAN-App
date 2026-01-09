@@ -208,7 +208,7 @@ export default function SignupPage() {
                           Parent's Email {age !== null && age < 14 ? '(Required)' : '(Optional)'}
                         </FormLabel>
                         <FormControl>
-                          <Input placeholder="parent@example.com" {...field} value={field.value ?? ''}/>
+                          <Input placeholder="parent@example.com" {...field} value={field.value ?? ''} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
