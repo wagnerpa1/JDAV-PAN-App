@@ -25,6 +25,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { format, isSameDay } from 'date-fns';
+import { useToast } from '@/hooks/use-toast';
 
 function ReservationStatusUpdater({ reservation }: { reservation: MaterialReservation }) {
     const firestore = useFirestore();
