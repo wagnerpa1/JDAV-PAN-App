@@ -23,17 +23,30 @@ import {
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
-import { useUser, useAuth } from "@/firebase";
+import { useState, useMemo } from "react";
+import { useUser, useAuth, useDoc, useFirestore, useMemoFirebase } from "@/firebase";
 import { signOut } from "firebase/auth";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Skeleton } from "./ui/skeleton";
+import type { UserProfile } from "@/types";
+import { doc } from 'firebase/firestore';
+
 
 function UserAuth() {
   const { user, isUserLoading } = useUser();
   const auth = useAuth();
+  const firestore = useFirestore();
 
-  if (isUserLoading) {
+  const userDocRef = useMemoFirebase(() => {
+    if (!user) return null;
+    return doc(firestore, 'users', user.uid);
+  }, [firestore, user]);
+
+  const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userDocRef);
+
+  const isLoading = isUserLoading || isProfileLoading;
+
+  if (isLoading) {
     return <Skeleton className="h-12 w-full rounded-lg" />
   }
 
@@ -55,21 +68,28 @@ function UserAuth() {
     signOut(auth);
   };
 
-  const getInitials = () => {
-    if (user.isAnonymous) return "AN";
-    return user.email?.substring(0, 2).toUpperCase() || "??";
+  const getInitials = (name?: string) => {
+    if (!name) return "??";
+    return name
+      .split(' ')
+      .map(n => n[0])
+      .join('')
+      .substring(0, 2)
+      .toUpperCase();
   };
+  
+  const displayName = userProfile?.name || (user.isAnonymous ? "Anonymous User" : user.email);
 
   return (
     <div className="flex items-center justify-between rounded-lg border bg-card p-2 text-card-foreground">
       <Link href="/profile" className="flex items-center gap-3 hover:no-underline text-card-foreground">
         <Avatar>
-          {user.photoURL && <AvatarImage src={user.photoURL} alt="User profile picture" />}
-          <AvatarFallback>{getInitials()}</AvatarFallback>
+          {userProfile?.profilePictureUrl && <AvatarImage src={userProfile.profilePictureUrl} alt="User profile picture" />}
+          <AvatarFallback>{getInitials(userProfile?.name)}</AvatarFallback>
         </Avatar>
-        <div className="flex flex-col">
+        <div className="flex flex-col overflow-hidden">
           <span className="truncate text-sm font-medium">
-            {user.isAnonymous ? "Anonymous User" : user.email}
+            {displayName}
           </span>
         </div>
       </Link>
@@ -136,3 +156,5 @@ export function AppSidebar() {
     </Sheet>
   );
 }
+
+    

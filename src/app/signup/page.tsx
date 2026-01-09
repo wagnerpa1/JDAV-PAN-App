@@ -71,6 +71,7 @@ function initiateEmailSignUpAndCreateUser(
       const userDocRef = doc(firestore, 'users', user.uid);
       const newUser = {
         id: user.uid,
+        name: user.email?.split('@')[0] || 'New User', // Default name from email
         email: user.email,
         role: email === 'privat@paulwagner.net' ? 'admin' : 'user',
         profilePictureUrl: '',
@@ -241,3 +242,5 @@ export default function SignupPage() {
     </div>
   );
 }
+
+    

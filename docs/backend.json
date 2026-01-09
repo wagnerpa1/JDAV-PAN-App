@@ -208,6 +208,10 @@
           "type": "string",
           "description": "Unique identifier for the User entity. This should match the Firebase Auth UID."
         },
+        "name": {
+          "type": "string",
+          "description": "The user's display name."
+        },
         "email": {
           "type": "string",
           "description": "The user's email address.",
@@ -229,6 +233,7 @@
       },
       "required": [
         "id",
+        "name",
         "email",
         "role"
       ]

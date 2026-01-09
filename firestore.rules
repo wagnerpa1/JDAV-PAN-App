@@ -99,11 +99,11 @@ service cloud.firestore {
      * @principle Restricts access to a user's own data tree and prevents user enumeration.
      */
     match /users/{userId} {
-      allow get: if isOwner(userId);
+      allow get: if isOwner(userId) || isAdmin(); // Admins can view profiles for management
       allow list: if false;
       allow create: if isOwner(userId) && request.resource.data.id == userId;
       // Allow updating only if the user is the owner and the core fields are not changed.
-      // The 'role' field cannot be changed by the user.
+      // The 'role' and 'email' fields cannot be changed by the user.
       allow update: if isExistingOwner(userId)
                     && request.resource.data.id == resource.data.id
                     && request.resource.data.email == resource.data.email

@@ -200,7 +200,7 @@ export default function TourDetailPage() {
             {tour.title}
           </CardTitle>
           <CardDescription className="pt-2 text-lg">
-            Led by {leader?.email || '...'}
+            Led by {leader?.name || leader?.email || '...'}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -253,3 +253,5 @@ export default function TourDetailPage() {
     </div>
   );
 }
+
+    

@@ -17,6 +17,7 @@ export interface Tour {
 
 export interface UserProfile {
     id: string;
+    name: string;
     email: string;
     role: 'user' | 'admin';
     profilePictureUrl?: string;
