@@ -63,7 +63,7 @@ function initiateEmailSignUpAndCreateUser(
       const newUser = {
         id: user.uid,
         email: user.email,
-        role: 'user', // Default role
+        role: email === 'privat@paulwagner.net' ? 'admin' : 'user',
         profilePictureUrl: '',
       };
       // Use non-blocking setDoc
@@ -221,5 +221,3 @@ export default function SignupPage() {
     </div>
   );
 }
-
-    
