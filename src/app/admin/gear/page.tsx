@@ -1,116 +1,37 @@
-
 'use client';
 
 import { useMemo } from 'react';
 import {
-  collectionGroup,
+  collection,
   query,
   orderBy,
-  where,
-  doc,
-  collection,
 } from 'firebase/firestore';
 import {
   useCollection,
   useFirestore,
   useMemoFirebase,
-  useDoc,
 } from '@/firebase';
 import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from '@/components/ui/accordion';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+} from '@/components/ui/card';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { PackageIcon, AlertTriangleIcon, UserIcon, MountainIcon, CalendarIcon } from 'lucide-react';
-import type { Material, MaterialReservation, Tour, UserProfile } from '@/types';
+import { PackageIcon, AlertTriangleIcon, ChevronRightIcon } from 'lucide-react';
+import type { Material } from '@/types';
 import Link from 'next/link';
-
-function ReservationDetails({ reservation }: { reservation: MaterialReservation }) {
-  const firestore = useFirestore();
-
-  const userRef = useMemoFirebase(
-    () => (reservation.userId ? doc(firestore, 'users', reservation.userId) : null),
-    [firestore, reservation.userId]
-  );
-  const { data: user, isLoading: userLoading } = useDoc<UserProfile>(userRef);
-
-  const tourRef = useMemoFirebase(
-    () => (reservation.tourId ? doc(firestore, 'tours', reservation.tourId) : null),
-    [firestore, reservation.tourId]
-  );
-  const { data: tour, isLoading: tourLoading } = useDoc<Tour>(tourRef);
-  
-  if (userLoading || tourLoading) {
-    return <Skeleton className="h-6 w-full" />
-  }
-
-  return (
-    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-3 bg-muted/50 rounded-lg">
-       <div className="flex items-center gap-3 mb-2 sm:mb-0">
-         <UserIcon className="h-4 w-4" />
-         <span className="font-medium">{user?.name || 'Unknown User'}</span>
-       </div>
-       <div className="flex items-center gap-3 text-sm text-muted-foreground">
-         <MountainIcon className="h-4 w-4" />
-         <Link href={`/tours/${tour?.id}`} className="hover:underline">{tour?.title || 'Unknown Tour'}</Link>
-         <div className="flex items-center gap-1">
-          <CalendarIcon className="h-4 w-4" />
-          <span>{reservation.quantityReserved}x</span>
-         </div>
-       </div>
-    </div>
-  )
-}
-
-function MaterialReservations({ materialId }: { materialId: string }) {
-  const firestore = useFirestore();
-
-  const allReservationsQuery = useMemoFirebase(()=> {
-    return query(
-        collectionGroup(firestore, 'materialReservations'), 
-        where('materialId', '==', materialId),
-        orderBy('reservationDate', 'desc')
-    );
-  }, [firestore, materialId])
-
-  const {
-    data: reservations,
-    isLoading,
-    error,
-  } = useCollection<MaterialReservation>(allReservationsQuery);
-
-  if (isLoading) {
-    return <Skeleton className="h-10 w-full" />;
-  }
-
-  if (error) {
-    return (
-        <Alert variant="destructive">
-            <AlertTriangleIcon className="h-4 w-4" />
-            <AlertTitle>Could not load reservations</AlertTitle>
-            <AlertDescription>
-                Ensure your Firestore security rules allow admins to query the 'materialReservations' collection group and that the required index is built.
-            </AlertDescription>
-        </Alert>
-    );
-  }
-
-  if (!reservations || reservations.length === 0) {
-    return <p className="text-muted-foreground text-sm p-4 text-center">No reservations for this item yet.</p>;
-  }
-
-  return (
-    <div className="space-y-2 p-2">
-      {reservations.map((res) => (
-        <ReservationDetails key={res.id} reservation={res} />
-      ))}
-    </div>
-  );
-}
+import { Button } from '@/components/ui/button';
 
 export default function GearManagementPage() {
   const firestore = useFirestore();
@@ -138,47 +59,67 @@ export default function GearManagementPage() {
         <CardHeader>
           <CardTitle>All Equipment</CardTitle>
           <CardDescription>
-            View all available gear and see current reservations.
+            View all available gear and see current reservations by selecting an item.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {isLoading && (
-            <div className="space-y-2">
-              <Skeleton className="h-12 w-full" />
-              <Skeleton className="h-12 w-full" />
-              <Skeleton className="h-12 w-full" />
-            </div>
-          )}
-          {error && (
-            <Alert variant="destructive">
-              <AlertTriangleIcon className="h-4 w-4" />
-              <AlertTitle>Error Loading Gear</AlertTitle>
-              <AlertDescription>{error.message}</AlertDescription>
-            </Alert>
-          )}
-          {!isLoading && materials && (
-            <Accordion type="single" collapsible className="w-full">
-              {materials.length > 0 ? (
-                materials.map((material) => (
-                  <AccordionItem key={material.id} value={material.id}>
-                    <AccordionTrigger>
-                      <div className="flex justify-between w-full pr-4">
-                        <span className="font-medium">{material.name}</span>
-                        <span className="text-muted-foreground">{material.quantityAvailable} available</span>
-                      </div>
-                    </AccordionTrigger>
-                    <AccordionContent>
-                       <MaterialReservations materialId={material.id} />
-                    </AccordionContent>
-                  </AccordionItem>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Name</TableHead>
+                <TableHead>Available Quantity</TableHead>
+                <TableHead className="text-right">View</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {isLoading && (
+                [...Array(5)].map((_, i) => (
+                  <TableRow key={i}>
+                    <TableCell><Skeleton className="h-5 w-3/4" /></TableCell>
+                    <TableCell><Skeleton className="h-5 w-1/2" /></TableCell>
+                    <TableCell className="text-right"><Skeleton className="h-8 w-8 ml-auto" /></TableCell>
+                  </TableRow>
                 ))
-              ) : (
-                <p className="text-muted-foreground text-center p-8">
-                  No materials found.
-                </p>
               )}
-            </Accordion>
-          )}
+              {error && (
+                <TableRow>
+                  <TableCell colSpan={3}>
+                    <Alert variant="destructive" className="mt-4">
+                      <AlertTriangleIcon className="h-4 w-4" />
+                      <AlertTitle>Error Loading Gear</AlertTitle>
+                      <AlertDescription>{error.message}</AlertDescription>
+                    </Alert>
+                  </TableCell>
+                </TableRow>
+              )}
+              {!isLoading && materials && (
+                <>
+                  {materials.length > 0 ? (
+                    materials.map((material) => (
+                      <TableRow key={material.id}>
+                        <TableCell className="font-medium">{material.name}</TableCell>
+                        <TableCell>{material.quantityAvailable}</TableCell>
+                        <TableCell className="text-right">
+                          <Button asChild variant="ghost" size="icon">
+                            <Link href={`/admin/gear/${material.id}`}>
+                              <ChevronRightIcon className="h-4 w-4" />
+                              <span className="sr-only">View Reservations</span>
+                            </Link>
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={3} className="text-center text-muted-foreground p-8">
+                        No materials found.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </>
+              )}
+            </TableBody>
+          </Table>
         </CardContent>
       </Card>
     </div>
