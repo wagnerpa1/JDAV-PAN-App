@@ -22,7 +22,7 @@ import {
   endOfDay,
   format,
 } from 'date-fns';
-import type { DayPicker } from 'react-day-picker';
+import type { DayModifiers } from 'react-day-picker';
 
 interface Tour {
   id: string;
@@ -69,7 +69,7 @@ export default function CalendarPage() {
     setCurrentMonth(month);
   };
   
-  const handleDayClick: DayPicker['onDayClick'] = (day, modifiers) => {
+  const handleDayClick = (day: Date, modifiers: DayModifiers) => {
     if (modifiers.tour) {
       setSelectedDay(day);
     } else {
@@ -93,77 +93,78 @@ export default function CalendarPage() {
           Tour Calendar
         </h1>
       </div>
-
-      <Card className="shadow-lg rounded-xl">
-        <CardContent className="p-2 md:p-6">
-          <Calendar
-            mode="single"
-            selected={selectedDay}
-            onSelect={setSelectedDay}
-            onDayClick={handleDayClick}
-            month={currentMonth}
-            onMonthChange={handleMonthChange}
-            modifiers={{ tour: tourDays }}
-            modifiersClassNames={{
-              tour: 'bg-primary/20 text-primary-foreground rounded-full',
-              selected: '!bg-primary !text-primary-foreground',
-            }}
-            className="w-full"
-          />
-        </CardContent>
-      </Card>
       
-      <div className="mt-8">
-        <h2 className="text-2xl font-semibold mb-4">
-          Tours on {selectedDay ? format(selectedDay, 'PPP') : 'selected day'}
-        </h2>
-        {isLoading && (
-          <div className="space-y-4">
-            <Skeleton className="h-20 w-full" />
-          </div>
-        )}
-        {error && (
-          <Alert variant="destructive">
-            <AlertTriangleIcon className="h-4 w-4" />
-            <AlertTitle>Error</AlertTitle>
-            <AlertDescription>
-              Could not fetch tours for this month.
-            </AlertDescription>
-          </Alert>
-        )}
-        {!isLoading && !error && (
-          <div className="space-y-4">
-            {toursOnSelectedDay.length > 0 ? (
-              toursOnSelectedDay.map((tour) => (
-                <Link key={tour.id} href={`/tours/${tour.id}`} className="block hover:no-underline group">
-                  <Card className="shadow-md hover:shadow-lg transition-shadow duration-300 rounded-xl group-hover:border-primary">
-                    <CardHeader>
-                      <CardTitle className="text-xl font-semibold group-hover:text-primary transition-colors">
-                        {tour.title}
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="grid gap-2 text-muted-foreground">
-                      <div className="flex items-center gap-2">
-                        <MapPinIcon className="h-4 w-4" />
-                        <span>{tour.location}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <CalendarIcon className="h-4 w-4" />
-                        <span>{formatDate(tour.date)}</span>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </Link>
-              ))
-            ) : (
-              <div className="text-center py-10 border-2 border-dashed rounded-xl">
-                <p className="text-muted-foreground">
-                  {selectedDay ? 'No tours on this day.' : 'Select a day with a tour to see details.'}
-                </p>
-              </div>
-            )}
-          </div>
-        )}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <Card className="shadow-lg rounded-xl">
+          <CardContent className="p-2 md:p-6">
+            <Calendar
+              mode="single"
+              selected={selectedDay}
+              onDayClick={handleDayClick}
+              month={currentMonth}
+              onMonthChange={handleMonthChange}
+              modifiers={{ tour: tourDays }}
+              modifiersClassNames={{
+                tour: 'bg-primary text-primary-foreground rounded-full',
+                selected: 'bg-background text-primary border-2 border-primary rounded-full',
+              }}
+              className="w-full"
+            />
+          </CardContent>
+        </Card>
+        
+        <div className="space-y-4">
+          <h2 className="text-2xl font-semibold">
+            Tours on {selectedDay ? format(selectedDay, 'PPP') : 'selected day'}
+          </h2>
+          {isLoading && (
+            <div className="space-y-4">
+              <Skeleton className="h-20 w-full" />
+            </div>
+          )}
+          {error && (
+            <Alert variant="destructive">
+              <AlertTriangleIcon className="h-4 w-4" />
+              <AlertTitle>Error</AlertTitle>
+              <AlertDescription>
+                Could not fetch tours for this month.
+              </AlertDescription>
+            </Alert>
+          )}
+          {!isLoading && !error && (
+            <>
+              {toursOnSelectedDay.length > 0 ? (
+                toursOnSelectedDay.map((tour) => (
+                  <Link key={tour.id} href={`/tours/${tour.id}`} className="block hover:no-underline group">
+                    <Card className="shadow-md hover:shadow-lg transition-shadow duration-300 rounded-xl group-hover:border-primary">
+                      <CardHeader>
+                        <CardTitle className="text-xl font-semibold group-hover:text-primary transition-colors">
+                          {tour.title}
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="grid gap-2 text-muted-foreground">
+                        <div className="flex items-center gap-2">
+                          <MapPinIcon className="h-4 w-4" />
+                          <span>{tour.location}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <CalendarIcon className="h-4 w-4" />
+                          <span>{formatDate(tour.date)}</span>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </Link>
+                ))
+              ) : (
+                <div className="text-center py-10 border-2 border-dashed rounded-xl h-full flex items-center justify-center">
+                  <p className="text-muted-foreground">
+                    {selectedDay ? 'No tours on this day.' : 'Select a day with a tour to see details.'}
+                  </p>
+                </div>
+              )}
+            </>
+          )}
+        </div>
       </div>
     </div>
   );
