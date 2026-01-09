@@ -37,7 +37,10 @@ export default function GearManagementPage() {
   const firestore = useFirestore();
 
   const materialsQuery = useMemoFirebase(
-    () => query(collection(firestore, 'materials'), orderBy('name', 'asc')),
+    () => {
+      if (!firestore) return null;
+      return query(collection(firestore, 'materials'), orderBy('name', 'asc'))
+    },
     [firestore]
   );
   const {
