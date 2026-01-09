@@ -16,6 +16,7 @@ import {
   FileTextIcon,
   DatabaseZapIcon,
   LockIcon,
+  MountainIcon,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -24,6 +25,12 @@ interface UserProfile {
 }
 
 const adminUtilities = [
+  {
+    title: 'Tour Management',
+    href: '/admin/tours',
+    icon: <MountainIcon className="h-6 w-6 text-primary" />,
+    description: 'Create, edit, and manage all tours.',
+  },
   {
     title: 'Document Management',
     href: '/documents',
@@ -97,6 +104,7 @@ export default function AdminPage() {
 
       {isLoading && (
          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 w-full max-w-6xl">
+            <Skeleton className="h-32 w-full" />
             <Skeleton className="h-32 w-full" />
             <Skeleton className="h-32 w-full" />
         </div>
