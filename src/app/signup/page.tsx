@@ -87,10 +87,18 @@ export default function SignupPage() {
 
   const stepOneForm = useForm<StepOneData>({
     resolver: zodResolver(stepOneSchema),
+    defaultValues: {
+      dob: '',
+    },
   });
 
   const stepTwoForm = useForm<StepTwoData>({
     resolver: zodResolver(stepTwoSchema),
+    defaultValues: {
+      email: '',
+      password: '',
+      parentEmail: '',
+    },
   });
 
   const handleStepOneSubmit = (data: StepOneData) => {
