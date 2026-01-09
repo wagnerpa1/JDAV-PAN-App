@@ -10,7 +10,7 @@ import {
   useCollection,
   setDocumentNonBlocking,
 } from '@/firebase';
-import { doc, collection, query, limit } from 'firebase/firestore';
+import { doc, collection, query } from 'firebase/firestore';
 import {
   Card,
   CardContent,
@@ -36,7 +36,6 @@ import {
 import { format, isSameDay, isPast } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import type { Tour, UserProfile, Participant } from '@/types';
 
 function TourDetailsSkeleton() {
@@ -63,65 +62,6 @@ function TourDetailsSkeleton() {
       </CardFooter>
     </Card>
   );
-}
-
-function ParticipantList({ tourId }: { tourId: string }) {
-  const firestore = useFirestore();
-  const { user } = useUser();
-
-  const participantsQuery = useMemoFirebase(
-    () => query(collection(firestore, 'tours', tourId, 'participants'), limit(50)),
-    [firestore, tourId]
-  );
-  const { data: participants, isLoading, error } = useCollection<Participant>(participantsQuery);
-
-  const userDocs = useMemo(() => {
-    if (!participants) return [];
-    return participants.map(p => doc(firestore, 'users', p.userId));
-  }, [participants, firestore]);
-
-  // This is a simplified way to fetch user profiles for participants.
-  // In a real-world app with many participants, this would need optimization (e.g., a backend function).
-  const participantProfiles = userDocs.map(docRef => useDoc<UserProfile>(docRef).data);
-  
-  const getInitials = (email?: string) => {
-    if (!email) return '??';
-    return email.substring(0, 2).toUpperCase();
-  };
-
-
-  return (
-    <Card className="mt-8">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <UsersIcon className="h-6 w-6" />
-          Participants ({participants?.length || 0})
-        </CardTitle>
-        <CardDescription>Users who have joined this tour.</CardDescription>
-      </CardHeader>
-      <CardContent>
-        {isLoading && <Skeleton className="h-10 w-full" />}
-        {error && <Alert variant="destructive"><AlertTriangleIcon className="h-4 w-4" /><AlertTitle>Error</AlertTitle><AlertDescription>Could not load participants.</AlertDescription></Alert>}
-        {!isLoading && participants && participantProfiles && (
-          <div className="space-y-4">
-            {participants.length === 0 ? (
-              <p className="text-muted-foreground">No one has joined this tour yet.</p>
-            ) : (
-              participantProfiles.filter(p => p).map((profile, index) => (
-                <div key={profile?.id || index} className="flex items-center gap-4">
-                  <Avatar>
-                    <AvatarImage src={profile?.profilePictureUrl} />
-                    <AvatarFallback>{getInitials(profile?.email)}</AvatarFallback>
-                  </Avatar>
-                  <span className="font-medium">{profile?.email}</span>
-                </div>
-              ))
-            )}
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  )
 }
 
 export default function TourDetailPage() {
@@ -310,10 +250,6 @@ export default function TourDetailPage() {
             {getParticipationButton()}
         </CardFooter>
       </Card>
-      
-      <ParticipantList tourId={tour.id} />
     </div>
   );
 }
-
-    
