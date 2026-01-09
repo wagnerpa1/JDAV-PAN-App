@@ -10,7 +10,7 @@ export default function Home() {
   ];
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-start p-4 pt-10 sm:p-6 md:p-8 lg:p-12">
+    <div className="flex flex-col items-center justify-start p-4 pt-10 sm:p-6 md:p-8 lg:p-12">
       <div className="text-center mb-10 md:mb-16">
         <div className="inline-block p-3 bg-primary rounded-full mb-4">
           <MountainIcon className="h-12 w-12 text-primary-foreground" />
@@ -38,6 +38,6 @@ export default function Home() {
           </Link>
         ))}
       </div>
-    </main>
+    </div>
   );
 }
