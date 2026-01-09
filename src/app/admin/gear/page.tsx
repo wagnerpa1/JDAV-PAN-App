@@ -3,7 +3,7 @@
 
 import { useMemo } from 'react';
 import {
-  collection,
+  collectionGroup,
   query,
   orderBy,
   where,
@@ -26,7 +26,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { PackageIcon, AlertTriangleIcon, UserIcon, MountainIcon, CalendarIcon } from 'lucide-react';
 import type { Material, MaterialReservation, Tour, UserProfile } from '@/types';
-import { format } from 'date-fns';
 import Link from 'next/link';
 
 function ReservationDetails({ reservation }: { reservation: MaterialReservation }) {
@@ -68,22 +67,10 @@ function ReservationDetails({ reservation }: { reservation: MaterialReservation 
 
 function MaterialReservations({ materialId }: { materialId: string }) {
   const firestore = useFirestore();
-  const reservationsQuery = useMemoFirebase(
-    () =>
-      query(
-        collection(firestore, 'tours'), // This is a workaround as we can't query all subcollections
-        where('materialReservations', 'array-contains', materialId)
-      ),
-    [firestore, materialId]
-  );
 
-  const reservationsPath = `tours/{tourId}/materialReservations`; // Path is not perfect
   const allReservationsQuery = useMemoFirebase(()=> {
-    // A better approach would be to query a root-level `materialReservations` collection
-    // Here we query all tours and then get subcollections, which is inefficient.
-    // For this prototype, we'll assume a root collection `materialReservations`
     return query(
-        collection(firestore, 'materialReservations'), 
+        collectionGroup(firestore, 'materialReservations'), 
         where('materialId', '==', materialId),
         orderBy('reservationDate', 'desc')
     );
@@ -100,13 +87,12 @@ function MaterialReservations({ materialId }: { materialId: string }) {
   }
 
   if (error) {
-    // This query is likely to fail with default rules, but we'll handle it gracefully
     return (
         <Alert variant="destructive">
             <AlertTriangleIcon className="h-4 w-4" />
             <AlertTitle>Could not load reservations</AlertTitle>
             <AlertDescription>
-                Could not load reservations. Please ensure your firestore rules allow collection group queries on `materialReservations`.
+                Ensure your Firestore security rules allow admins to query the 'materialReservations' collection group and that the required index is built.
             </AlertDescription>
         </Alert>
     );

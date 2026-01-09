@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "Tour": {
@@ -567,8 +568,25 @@
             }
           ]
         }
+      },
+      {
+        "path": "/materialReservations/{materialReservationId}",
+        "definition": {
+          "isCollectionGroup": true,
+          "entityName": "MaterialReservation",
+          "schema": {
+            "$ref": "#/backend/entities/MaterialReservation"
+          },
+          "description": "A collection group query path for all material reservations. This allows admins to query across all subcollections.",
+          "params": [
+            {
+              "name": "materialReservationId",
+              "description": "Unique identifier for the material reservation."
+            }
+          ]
+        }
       }
     ],
-    "reasoning": "The Firestore structure is designed to efficiently manage tour-related data, material reservations, age groups, and user information for the 'Alpine Connect' application. To ensure security and scalability, I will create root-level collections for `tours`, `materials`, `ageGroups`, `users`, `documents`, and `posts`. `MaterialReservation` will be a subcollection of both `/users/{userId}` and `/tours/{tourId}`, to make data easily retrievable from both sides, and to avoid `get()` calls in the rules. `Comment` is a subcollection of `posts`. \n\nThis design promotes Authorization Independence.  For example, `MaterialReservation` documents contain the `userId` and `tourId`, avoiding the need to fetch parent document data for authorization.\n\nThe structure also supports the required QAPs.  `list` operations can be secured at each collection level.  Segregation of concerns allows specific rules for each collection (e.g., only admins can create tours, users can only create reservations for themselves)."
+    "reasoning": "The Firestore structure is designed to efficiently manage tour-related data, material reservations, age groups, and user information for the 'Alpine Connect' application. To ensure security and scalability, I will create root-level collections for `tours`, `materials`, `ageGroups`, `users`, `documents`, and `posts`. `MaterialReservation` will be a subcollection of both `/users/{userId}` and `/tours/{tourId}`, to make data easily retrievable from both sides, and to avoid `get()` calls in the rules. `Comment` is a subcollection of `posts`. I am also defining a collection group for `materialReservations` to allow admins to query across all reservations for the Gear Management page.\n\nThis design promotes Authorization Independence.  For example, `MaterialReservation` documents contain the `userId` and `tourId`, avoiding the need to fetch parent document data for authorization.\n\nThe structure also supports the required QAPs.  `list` operations can be secured at each collection level.  Segregation of concerns allows specific rules for each collection (e.g., only admins can create tours, users can only create reservations for themselves)."
   }
 }
