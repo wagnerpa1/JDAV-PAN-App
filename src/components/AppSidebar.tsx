@@ -18,6 +18,7 @@ import {
   RocketIcon,
   LogOutIcon,
   LogInIcon,
+  ShieldCheckIcon,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -90,7 +91,7 @@ export function AppSidebar() {
     { href: "/material", label: "Material", icon: TentIcon },
     { href: "/documents", label: "Documents", icon: FileTextIcon },
     { href: "/profile", label: "Profile", icon: UserIcon },
-    { href: "/seed", label: "Seed Data", icon: RocketIcon },
+    { href: "/admin", label: "Admin", icon: ShieldCheckIcon },
   ];
 
   return (
