@@ -24,9 +24,14 @@
           "description": "The end date and time the tour is scheduled to occur.",
           "format": "date-time"
         },
+        "registrationDeadline": {
+          "type": "string",
+          "description": "The last date and time users can register for the tour.",
+          "format": "date-time"
+        },
         "location": {
           "type": "string",
-          "description": "The geographical location where the tour will take place."
+          "description": "The geographical location or meeting point for the tour."
         },
         "description": {
           "type": "string",
@@ -36,13 +41,6 @@
           "type": "number",
           "description": "The maximum number of participants allowed on the tour."
         },
-        "materialIds": {
-          "type": "array",
-          "description": "References to Materials required for the tour. (Relationship: Tour 1:N Material)",
-          "items": {
-            "type": "string"
-          }
-        },
         "ageGroupId": {
           "type": "string",
           "description": "Reference to AgeGroup this tour is designed for. (Relationship: AgeGroup 1:N Tour)"
@@ -50,6 +48,18 @@
         "leaderId": {
           "type": "string",
           "description": "Reference to User who is leading the tour. (Relationship: User 1:N Tour)"
+        },
+        "duration": {
+          "type": "string",
+          "description": "The estimated duration of the tour (e.g., '3 hours', '2 days')."
+        },
+        "elevationGain": {
+          "type": "number",
+          "description": "The total elevation gain in meters."
+        },
+        "fee": {
+          "type": "number",
+          "description": "The participation fee for the tour."
         }
       },
       "required": [
@@ -57,11 +67,15 @@
         "title",
         "startDate",
         "endDate",
+        "registrationDeadline",
         "location",
         "description",
         "participantLimit",
         "ageGroupId",
-        "leaderId"
+        "leaderId",
+        "duration",
+        "elevationGain",
+        "fee"
       ]
     },
     "Material": {
@@ -435,4 +449,5 @@
     "reasoning": "The Firestore structure is designed to efficiently manage tour-related data, material reservations, age groups, and user information for the 'Alpine Connect' application. To ensure security and scalability, I will create root-level collections for `tours`, `materials`, `ageGroups`, `users`, and `documents`. `MaterialReservation` will be a subcollection of both `/users/{userId}` and `/tours/{tourId}`, to make data easily retrievable from both sides, and to avoid `get()` calls in the rules.\n\nThis design promotes Authorization Independence.  For example, `MaterialReservation` documents contain the `userId` and `tourId`, avoiding the need to fetch parent document data for authorization.\n\nThe structure also supports the required QAPs.  `list` operations can be secured at each collection level.  Segregation of concerns allows specific rules for each collection (e.g., only admins can create tours, users can only create reservations for themselves)."
   }
 }
+
     

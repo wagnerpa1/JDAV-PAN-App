@@ -27,9 +27,13 @@ import {
   InfoIcon,
   MapPinIcon,
   UsersIcon,
-  UserCheckIcon
+  UserCheckIcon,
+  ClockIcon,
+  TrendingUpIcon,
+  EuroIcon,
+  CalendarClockIcon
 } from 'lucide-react';
-import { format, isSameDay } from 'date-fns';
+import { format, isSameDay, isPast } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -48,6 +52,8 @@ function TourDetailsSkeleton() {
           <Skeleton className="h-16 w-full" />
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Skeleton className="h-8 w-full" />
+          <Skeleton className="h-8 w-full" />
           <Skeleton className="h-8 w-full" />
           <Skeleton className="h-8 w-full" />
         </div>
@@ -144,6 +150,12 @@ export default function TourDetailPage() {
   }, [firestore, tourId, user]);
   const { data: userParticipation } = useDoc<Participant>(participantDocRef);
 
+  const participantsQuery = useMemoFirebase(
+    () => query(collection(firestore, 'tours', tourId, 'participants')),
+    [firestore, tourId]
+  );
+  const { data: participants } = useCollection<Participant>(participantsQuery);
+
   const formatDateRange = (startDateIso: string, endDateIso: string) => {
     const start = new Date(startDateIso);
     const end = new Date(endDateIso);
@@ -206,7 +218,39 @@ export default function TourDetailPage() {
   }
   
   const isParticipating = !!userParticipation;
-  const isTourFull = false; // Add logic based on participant count vs. limit
+  const isTourFull = participants ? participants.length >= tour.participantLimit : false;
+  const isDeadlinePassed = isPast(new Date(tour.registrationDeadline));
+  
+  const getParticipationButton = () => {
+    if (isParticipating) {
+      return (
+        <Button disabled className="w-full text-lg py-6">
+          <UserCheckIcon className="mr-2 h-5 w-5" />
+          You are participating
+        </Button>
+      );
+    }
+    if (isDeadlinePassed) {
+      return (
+        <Button disabled className="w-full text-lg py-6">
+          Registration Closed
+        </Button>
+      );
+    }
+    if (isTourFull) {
+      return (
+        <Button disabled className="w-full text-lg py-6">
+          Tour is Full
+        </Button>
+      );
+    }
+    return (
+      <Button onClick={handleParticipate} className="w-full text-lg py-6">
+        Participate
+      </Button>
+    );
+  };
+
 
   return (
     <div className="container mx-auto p-4 md:p-8 max-w-4xl">
@@ -223,7 +267,7 @@ export default function TourDetailPage() {
           <p className="text-muted-foreground leading-relaxed">
             {tour.description}
           </p>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
             <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
               <CalendarIcon className="h-5 w-5 text-primary" />
               <span className="font-medium">
@@ -242,21 +286,28 @@ export default function TourDetailPage() {
                 <InfoIcon className="h-5 w-5 text-primary" />
                 <span className="font-medium">Age Group: {tour.ageGroupId}</span>
             </div>
+            <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+                <ClockIcon className="h-5 w-5 text-primary" />
+                <span className="font-medium">{tour.duration}</span>
+            </div>
+            <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+                <TrendingUpIcon className="h-5 w-5 text-primary" />
+                <span className="font-medium">{tour.elevationGain}m elevation gain</span>
+            </div>
+             <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+                <EuroIcon className="h-5 w-5 text-primary" />
+                <span className="font-medium">{new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(tour.fee)} fee</span>
+            </div>
+             <div className="flex items-center gap-3 p-3 bg-destructive/10 rounded-lg">
+                <CalendarClockIcon className="h-5 w-5 text-destructive" />
+                <span className="font-medium text-destructive">
+                    Register by {format(new Date(tour.registrationDeadline), 'PPP')}
+                </span>
+            </div>
           </div>
         </CardContent>
         <CardFooter>
-            <Button
-              onClick={handleParticipate}
-              disabled={isParticipating || isTourFull}
-              className="w-full text-lg py-6"
-            >
-                {isParticipating ? (
-                    <>
-                        <UserCheckIcon className="mr-2 h-5 w-5" />
-                        You are participating
-                    </>
-                ) : isTourFull ? 'Tour is Full' : 'Participate'}
-            </Button>
+            {getParticipationButton()}
         </CardFooter>
       </Card>
       

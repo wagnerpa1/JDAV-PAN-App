@@ -29,11 +29,20 @@ const formSchema = z.object({
   endDate: z.string().refine((val) => !isNaN(Date.parse(val)), {
     message: 'Please enter a valid end date.',
   }),
+  registrationDeadline: z.string().refine((val) => !isNaN(Date.parse(val)), {
+    message: 'Please enter a valid registration deadline.',
+  }),
   description: z.string().min(20, 'Description must be at least 20 characters.'),
   participantLimit: z.coerce.number().int().positive('Limit must be a positive number.'),
+  duration: z.string().min(1, 'Duration is required.'),
+  elevationGain: z.coerce.number().int().min(0, 'Elevation gain must be a positive number.'),
+  fee: z.coerce.number().min(0, 'Fee must be a positive number.'),
 }).refine(data => new Date(data.endDate) >= new Date(data.startDate), {
     message: 'End date must be on or after the start date.',
     path: ['endDate'],
+}).refine(data => new Date(data.registrationDeadline) <= new Date(data.startDate), {
+    message: 'Registration deadline must be on or before the start date.',
+    path: ['registrationDeadline'],
 });
 
 
@@ -56,17 +65,23 @@ export function TourForm({ existingTour }: TourFormProps) {
       location: '',
       startDate: '',
       endDate: '',
+      registrationDeadline: '',
       description: '',
       participantLimit: 10,
+      duration: '',
+      elevationGain: 0,
+      fee: 0,
     },
   });
 
   useEffect(() => {
     if (existingTour) {
+      const { startDate, endDate, registrationDeadline, ...rest } = existingTour;
       form.reset({
-        ...existingTour,
-        startDate: new Date(existingTour.startDate).toISOString().split('T')[0],
-        endDate: new Date(existingTour.endDate).toISOString().split('T')[0],
+        ...rest,
+        startDate: new Date(startDate).toISOString().split('T')[0],
+        endDate: new Date(endDate).toISOString().split('T')[0],
+        registrationDeadline: new Date(registrationDeadline).toISOString().split('T')[0],
       });
     }
   }, [existingTour, form]);
@@ -78,6 +93,7 @@ export function TourForm({ existingTour }: TourFormProps) {
       ...data,
       startDate: new Date(data.startDate).toISOString(),
       endDate: new Date(data.endDate).toISOString(),
+      registrationDeadline: new Date(data.registrationDeadline).toISOString(),
       // These are hardcoded for now, but could be dynamic
       ageGroupId: 'adults', 
       leaderId: user.uid,
@@ -125,9 +141,9 @@ export function TourForm({ existingTour }: TourFormProps) {
           name="location"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Location</FormLabel>
+              <FormLabel>Location / Meeting Point</FormLabel>
               <FormControl>
-                <Input placeholder="e.g., Alpine National Park" {...field} />
+                <Input placeholder="e.g., Alpine National Park Visitor Center" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -162,18 +178,74 @@ export function TourForm({ existingTour }: TourFormProps) {
             />
         </div>
         <FormField
-          control={form.control}
-          name="participantLimit"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Participant Limit</FormLabel>
-              <FormControl>
-                <Input type="number" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
+            control={form.control}
+            name="registrationDeadline"
+            render={({ field }) => (
+                <FormItem>
+                <FormLabel>Registration Deadline</FormLabel>
+                <FormControl>
+                    <Input type="date" {...field} />
+                </FormControl>
+                <FormMessage />
+                </FormItem>
+            )}
         />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <FormField
+            control={form.control}
+            name="duration"
+            render={({ field }) => (
+                <FormItem>
+                <FormLabel>Duration</FormLabel>
+                <FormControl>
+                    <Input placeholder="e.g., 3 hours, 2 days" {...field} />
+                </FormControl>
+                <FormMessage />
+                </FormItem>
+            )}
+            />
+            <FormField
+            control={form.control}
+            name="participantLimit"
+            render={({ field }) => (
+                <FormItem>
+                <FormLabel>Participant Limit</FormLabel>
+                <FormControl>
+                    <Input type="number" {...field} />
+                </FormControl>
+                <FormMessage />
+                </FormItem>
+            )}
+            />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <FormField
+            control={form.control}
+            name="elevationGain"
+            render={({ field }) => (
+                <FormItem>
+                <FormLabel>Elevation Gain (in meters)</FormLabel>
+                <FormControl>
+                    <Input type="number" {...field} />
+                </FormControl>
+                <FormMessage />
+                </FormItem>
+            )}
+            />
+            <FormField
+            control={form.control}
+            name="fee"
+            render={({ field }) => (
+                <FormItem>
+                <FormLabel>Fee (€)</FormLabel>
+                <FormControl>
+                    <Input type="number" step="0.01" {...field} />
+                </FormControl>
+                <FormMessage />
+                </FormItem>
+            )}
+            />
+        </div>
         <FormField
           control={form.control}
           name="description"

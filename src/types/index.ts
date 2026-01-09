@@ -4,11 +4,15 @@ export interface Tour {
     title: string;
     startDate: string;
     endDate: string;
+    registrationDeadline: string;
     location: string;
     description: string;
     participantLimit: number;
     ageGroupId: string;
     leaderId: string;
+    duration: string;
+    elevationGain: number;
+    fee: number;
 }
 
 export interface UserProfile {

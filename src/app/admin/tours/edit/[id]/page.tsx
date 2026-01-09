@@ -27,11 +27,13 @@ export default function EditTourPage() {
       <div className="max-w-2xl mx-auto">
         <h1 className="text-3xl font-bold mb-8">Edit Tour</h1>
         {isLoading && (
-          <div>
-            <Skeleton className="h-10 w-full mb-4" />
-            <Skeleton className="h-10 w-full mb-4" />
-            <Skeleton className="h-24 w-full mb-4" />
-            <Skeleton className="h-10 w-full mb-4" />
+          <div className="space-y-6">
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-24 w-full" />
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
           </div>
         )}
         {error && (

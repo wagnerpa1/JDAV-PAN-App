@@ -8,40 +8,53 @@ import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { RocketIcon, AlertTriangleIcon } from 'lucide-react';
+import { addDays, add } from 'date-fns';
 
 const sampleTours = [
   {
     id: 'tour-1',
     title: "Sunset Hike to Eagle's Peak",
-    startDate: new Date(new Date().setDate(new Date().getDate() + 7)).toISOString(),
-    endDate: new Date(new Date().setDate(new Date().getDate() + 7)).toISOString(),
-    location: 'Alpine National Park',
+    startDate: addDays(new Date(), 7).toISOString(),
+    endDate: addDays(new Date(), 7).toISOString(),
+    registrationDeadline: addDays(new Date(), 5).toISOString(),
+    location: "Alpine National Park Visitor's Center",
     description: 'A scenic hike to the famous Eagle\'s Peak, timed perfectly to watch the sunset over the mountains. This is a moderately challenging trail suitable for most fitness levels.',
     participantLimit: 20,
     ageGroupId: 'adults',
-    leaderId: 'tour-leader-1'
+    leaderId: 'tour-leader-1',
+    duration: 'Approx. 4 hours',
+    elevationGain: 550,
+    fee: 15.00
   },
   {
     id: 'tour-2',
     title: '3-Day Glacier Lake Kayak Adventure',
-    startDate: new Date(new Date().setDate(new Date().getDate() + 14)).toISOString(),
-    endDate: new Date(new Date().setDate(new Date().getDate() + 16)).toISOString(),
-    location: 'Glacier Lake',
+    startDate: addDays(new Date(), 14).toISOString(),
+    endDate: addDays(new Date(), 16).toISOString(),
+    registrationDeadline: addDays(new Date(), 10).toISOString(),
+    location: 'Glacier Lake Boathouse',
     description: 'Spend three days kayaking on the crystal-clear waters of Glacier Lake. We will explore hidden coves and enjoy a picnic on a secluded beach. Basic swimming skills required.',
     participantLimit: 15,
     ageGroupId: 'adults',
-    leaderId: 'tour-leader-2'
+    leaderId: 'tour-leader-2',
+    duration: '3 days, 2 nights',
+    elevationGain: 100,
+    fee: 250.00,
   },
   {
     id: 'tour-3',
     title: 'Beginner\'s Rock Climbing at Granite Falls',
-    startDate: new Date(new Date().setDate(new Date().getDate() + 21)).toISOString(),
-    endDate: new Date(new Date().setDate(new Date().getDate() + 21)).toISOString(),
-    location: 'Granite Falls',
+    startDate: addDays(new Date(), 21).toISOString(),
+    endDate: addDays(new Date(), 21).toISOString(),
+    registrationDeadline: addDays(new Date(), 18).toISOString(),
+    location: 'Granite Falls Parking Lot',
     description: 'Learn the basics of rock climbing and rappelling in a safe and supportive environment. All equipment is provided. No prior experience necessary!',
     participantLimit: 10,
     ageGroupId: 'youth',
-    leaderId: 'tour-leader-3'
+    leaderId: 'tour-leader-3',
+    duration: 'Full day (Approx. 6 hours)',
+    elevationGain: 50,
+    fee: 75.00,
   }
 ];
 
