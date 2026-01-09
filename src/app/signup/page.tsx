@@ -79,7 +79,7 @@ function initiateEmailSignUpAndCreateUser(
 
 export default function SignupPage() {
   const [step, setStep] = useState(1);
-  const [age, setAge] = useState<number | null>(null);
+  const [dateOfBirth, setDateOfBirth] = useState<string | null>(null);
   const auth = useAuth();
   const firestore = useFirestore();
   const router = useRouter();
@@ -102,13 +102,20 @@ export default function SignupPage() {
   });
 
   const handleStepOneSubmit = (data: StepOneData) => {
-    const calculatedAge = differenceInYears(new Date(), new Date(data.dob));
-    setAge(calculatedAge);
+    setDateOfBirth(data.dob);
     setStep(2);
   };
+  
+  const age = dateOfBirth ? differenceInYears(new Date(), new Date(dateOfBirth)) : null;
 
   const handleStepTwoSubmit = (data: StepTwoData) => {
     if (!auth || !firestore) return;
+
+    if (age !== null && age < 14 && !data.parentEmail) {
+      stepTwoForm.setError('parentEmail', { type: 'manual', message: "Parent's email is required for users under 14." });
+      return;
+    }
+    
     initiateEmailSignUpAndCreateUser(auth, firestore, data.email, data.password);
     toast({
       title: 'Account Creation Initiated',
@@ -195,14 +202,13 @@ export default function SignupPage() {
                   <FormField
                     control={stepTwoForm.control}
                     name="parentEmail"
-                    rules={{ required: age < 14 }}
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>
-                          Parent's Email {age < 14 ? '(Required)' : '(Optional)'}
+                          Parent's Email {age !== null && age < 14 ? '(Required)' : '(Optional)'}
                         </FormLabel>
                         <FormControl>
-                          <Input placeholder="parent@example.com" {...field} value={field.value || ''} />
+                          <Input placeholder="parent@example.com" {...field} value={field.value ?? ''}/>
                         </FormControl>
                         <FormMessage />
                       </FormItem>
