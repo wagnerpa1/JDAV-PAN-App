@@ -1,18 +1,17 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { MountainIcon, TentIcon, CalendarDaysIcon } from "lucide-react"; // Example icons
+import { MountainIcon, TentIcon, NewspaperIcon } from "lucide-react";
 import Link from "next/link";
 
 export default function Home() {
   const dashboardItems = [
-    { title: "Upcoming Tours", href: "/tours", icon: <MountainIcon className="h-6 w-6 text-primary" />, description: "View and manage your upcoming tours." },
+    { title: "Next Tour", href: "/tours", icon: <MountainIcon className="h-6 w-6 text-primary" />, description: "View your upcoming tour." },
     { title: "Material Reservations", href: "/reservations", icon: <TentIcon className="h-6 w-6 text-primary" />, description: "Reserve equipment for your next adventure." },
-    { title: "Latest Documents", href: "/documents", icon: <CalendarDaysIcon className="h-6 w-6 text-primary" />, description: "Access important documents and guidelines." },
+    { title: "News", href: "/news", icon: <NewspaperIcon className="h-6 w-6 text-primary" />, description: "Read the latest news from the bulletin board." },
   ];
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-start p-4 pt-10 sm:p-6 md:p-8 lg:p-12">
       <div className="text-center mb-10 md:mb-16">
-        {/* You can replace this with the actual logo component or image later */}
         <div className="inline-block p-3 bg-primary rounded-full mb-4">
           <MountainIcon className="h-12 w-12 text-primary-foreground" />
         </div>
