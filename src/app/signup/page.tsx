@@ -113,7 +113,16 @@ export default function SignupPage() {
       password: '',
       parentEmail: '',
     },
+    // Re-validate when age changes
+    context: { age },
   });
+  
+  // Effect to update resolver when age changes
+  useState(() => {
+    stepTwoForm.trigger();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [age]);
+
 
   const handleStepOneSubmit = (data: StepOneData) => {
     setDateOfBirth(data.dob);
