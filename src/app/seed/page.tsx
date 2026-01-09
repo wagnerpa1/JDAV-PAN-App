@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { collection, writeBatch } from 'firebase/firestore';
+import { collection, writeBatch, doc } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -80,15 +80,13 @@ export default function SeedDataPage() {
     
     try {
       if (dataType === 'tours') {
-        const toursCol = collection(firestore, 'tours');
         sampleTours.forEach(tour => {
-          const docRef = collection(toursCol).doc(tour.id);
+          const docRef = doc(firestore, 'tours', tour.id);
           batch.set(docRef, tour);
         });
       } else if (dataType === 'materials') {
-        const materialsCol = collection(firestore, 'materials');
         sampleMaterials.forEach(item => {
-          const docRef = collection(materialsCol).doc(item.id);
+          const docRef = doc(firestore, 'materials', item.id);
           batch.set(docRef, item);
         });
       }
