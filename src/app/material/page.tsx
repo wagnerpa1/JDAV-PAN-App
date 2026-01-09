@@ -54,9 +54,9 @@ export default function MaterialPage() {
             <Card key={i} className="shadow-lg rounded-xl">
               <CardHeader>
                 <Skeleton className="h-6 w-3/4" />
+                <Skeleton className="h-4 w-full mt-2" />
               </CardHeader>
               <CardContent>
-                <Skeleton className="h-4 w-full mb-2" />
                 <Skeleton className="h-4 w-2/3" />
               </CardContent>
               <CardFooter className="flex justify-between items-center">
@@ -86,7 +86,7 @@ export default function MaterialPage() {
                 <Card key={item.id} className="shadow-lg rounded-xl flex flex-col">
                   <CardHeader>
                     <CardTitle className="text-xl font-semibold">{item.name}</CardTitle>
-                    <CardDescription className="text-sm">{item.description}</CardDescription>
+                    <CardDescription className="text-sm pt-2">{item.description}</CardDescription>
                   </CardHeader>
                   <CardContent className="flex-grow space-y-4">
                      <div className="flex items-center gap-2 text-muted-foreground">
