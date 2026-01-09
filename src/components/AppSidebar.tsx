@@ -12,10 +12,8 @@ import {
   CalendarIcon,
   MountainIcon,
   TentIcon,
-  FileTextIcon,
   UserIcon,
   MenuIcon,
-  RocketIcon,
   LogOutIcon,
   LogInIcon,
   ShieldCheckIcon,
@@ -24,7 +22,7 @@ import {
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { useUser, useAuth, useDoc, useFirestore, useMemoFirebase } from "@/firebase";
 import { signOut } from "firebase/auth";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
@@ -111,7 +109,6 @@ export function AppSidebar() {
     { href: "/tours", label: "Tours", icon: MountainIcon },
     { href: "/material", label: "Material", icon: TentIcon },
     { href: "/news", label: "News", icon: NewspaperIcon },
-    { href: "/documents", label: "Documents", icon: FileTextIcon },
     { href: "/profile", label: "Profile", icon: UserIcon },
     { href: "/admin", label: "Admin", icon: ShieldCheckIcon },
   ];
@@ -158,3 +155,5 @@ export function AppSidebar() {
     </Sheet>
   );
 }
+
+    

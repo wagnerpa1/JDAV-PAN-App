@@ -278,43 +278,6 @@
         "joinedAt"
       ]
     },
-    "Document": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Document",
-      "type": "object",
-      "description": "Represents a file uploaded by an administrator.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the Document entity."
-        },
-        "name": {
-          "type": "string",
-          "description": "The name of the uploaded file."
-        },
-        "url": {
-          "type": "string",
-          "description": "The public download URL for the file from Firebase Storage.",
-          "format": "uri"
-        },
-        "uploaderId": {
-          "type": "string",
-          "description": "The UID of the admin user who uploaded the file."
-        },
-        "uploadedAt": {
-          "type": "string",
-          "description": "The date and time the document was uploaded.",
-          "format": "date-time"
-        }
-      },
-      "required": [
-        "id",
-        "name",
-        "url",
-        "uploaderId",
-        "uploadedAt"
-      ]
-    },
     "Post": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Post",
@@ -510,22 +473,6 @@
           ]
         }
       },
-      {
-        "path": "/documents/{documentId}",
-        "definition": {
-          "entityName": "Document",
-          "schema": {
-            "$ref": "#/backend/entities/Document"
-          },
-          "description": "Stores metadata about uploaded files. The 'documentId' parameter uniquely identifies each document.",
-          "params": [
-            {
-              "name": "documentId",
-              "description": "Unique identifier for the document."
-            }
-          ]
-        }
-      },
        {
         "path": "/posts/{postId}",
         "definition": {
@@ -580,6 +527,8 @@
         }
       }
     ],
-    "reasoning": "The Firestore structure is designed to efficiently manage tour-related data, material reservations, age groups, and user information for the 'Alpine Connect' application. To ensure security and scalability, I will create root-level collections for `tours`, `materials`, `ageGroups`, `users`, `documents`, and `posts`. `MaterialReservation` will be a subcollection of `/users/{userId}` to enforce ownership and allow users to see all their reservations easily. `Comment` is a subcollection of `posts`. I am also defining a collection group for `materialReservations` to allow admins to query across all reservations for the Gear Management page.\n\nThis design promotes Authorization Independence. For example, `MaterialReservation` documents contain the `userId`, avoiding the need to fetch parent document data for authorization.\n\nThe structure also supports the required QAPs. `list` operations can be secured at each collection level. Segregation of concerns allows specific rules for each collection (e.g., only admins can create tours, users can only create reservations for themselves)."
+    "reasoning": "The Firestore structure is designed to efficiently manage tour-related data, material reservations, age groups, and user information for the 'Alpine Connect' application. To ensure security and scalability, I will create root-level collections for `tours`, `materials`, `ageGroups`, `users`, and `posts`. `MaterialReservation` will be a subcollection of `/users/{userId}` to enforce ownership and allow users to see all their reservations easily. `Comment` is a subcollection of `posts`. I am also defining a collection group for `materialReservations` to allow admins to query across all reservations for the Gear Management page.\n\nThis design promotes Authorization Independence. For example, `MaterialReservation` documents contain the `userId`, avoiding the need to fetch parent document data for authorization.\n\nThe structure also supports the required QAPs. `list` operations can be secured at each collection level. Segregation of concerns allows specific rules for each collection (e.g., only admins can create tours, users can only create reservations for themselves)."
   }
 }
+
+    

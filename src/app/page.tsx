@@ -49,10 +49,10 @@ export default function Home() {
       description: 'Reserve equipment for your next adventure.',
     },
     {
-      title: 'Documents',
-      href: '/documents',
+      title: 'Community Board',
+      href: '/news',
       icon: <NewspaperIcon className="h-6 w-6 text-primary" />,
-      description: 'View shared documents.',
+      description: 'Connect with the community.',
     },
   ];
 
@@ -88,3 +88,5 @@ export default function Home() {
     </div>
   );
 }
+
+    

@@ -13,7 +13,6 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   ShieldCheckIcon,
-  FileTextIcon,
   DatabaseZapIcon,
   LockIcon,
   MountainIcon,
@@ -44,12 +43,6 @@ const adminUtilities = [
     href: '/news',
     icon: <NewspaperIcon className="h-6 w-6 text-primary" />,
     description: 'Create and manage news and updates.',
-  },
-  {
-    title: 'Document Management',
-    href: '/documents',
-    icon: <FileTextIcon className="h-6 w-6 text-primary" />,
-    description: 'Upload and manage shared documents for all users.',
   },
   {
     title: 'Database Seed Utility',
@@ -136,3 +129,5 @@ export default function AdminPage() {
     </div>
   );
 }
+
+    
