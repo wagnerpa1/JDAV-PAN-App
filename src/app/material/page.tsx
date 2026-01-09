@@ -1,22 +1,149 @@
 'use client';
 
-import { useMemo } from 'react';
-import { collection, query, orderBy } from 'firebase/firestore';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { useMemo, useState } from 'react';
+import { collection, query, orderBy, doc, writeBatch, serverTimestamp } from 'firebase/firestore';
+import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { TentIcon, AlertTriangleIcon, PackageIcon, CircleDollarSignIcon } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { useToast } from '@/hooks/use-toast';
+import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import type { Material } from '@/types';
 
-interface Material {
-  id: string;
-  name: string;
-  description: string;
-  quantityAvailable: number;
-  price: number;
-  sizes?: Record<string, number>;
+const reservationSchema = z.object({
+  startDate: z.string().refine((val) => !isNaN(Date.parse(val)), {
+    message: 'Please enter a valid start date.',
+  }),
+  endDate: z.string().refine((val) => !isNaN(Date.parse(val)), {
+    message: 'Please enter a valid end date.',
+  }),
+  quantity: z.coerce.number().int().min(1, 'Quantity must be at least 1.'),
+}).refine(data => new Date(data.endDate) >= new Date(data.startDate), {
+  message: 'End date must be on or after the start date.',
+  path: ['endDate'],
+});
+
+type ReservationFormData = z.infer<typeof reservationSchema>;
+
+function ReservationDialog({ material, children }: { material: Material, children: React.ReactNode }) {
+  const [open, setOpen] = useState(false);
+  const firestore = useFirestore();
+  const { user } = useUser();
+  const { toast } = useToast();
+
+  const form = useForm<ReservationFormData>({
+    resolver: zodResolver(reservationSchema),
+    defaultValues: {
+      startDate: new Date().toISOString().split('T')[0],
+      endDate: new Date().toISOString().split('T')[0],
+      quantity: 1,
+    },
+  });
+
+  const onSubmit = (data: ReservationFormData) => {
+    if (!firestore || !user) {
+      toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to make a reservation.' });
+      return;
+    }
+
+    const reservationData = {
+      userId: user.uid,
+      materialId: material.id,
+      quantityReserved: data.quantity,
+      startDate: new Date(data.startDate).toISOString(),
+      endDate: new Date(data.endDate).toISOString(),
+      status: 'pending',
+      reservationDate: new Date().toISOString(),
+    };
+
+    // Reservations are created under the user's subcollection
+    const reservationRef = collection(firestore, 'users', user.uid, 'materialReservations');
+    addDocumentNonBlocking(reservationRef, reservationData);
+
+    toast({
+      title: 'Reservation Request Sent',
+      description: `Your request for ${material.name} has been sent for approval.`,
+    });
+    setOpen(false);
+    form.reset();
+  };
+
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        {children}
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Reserve: {material.name}</DialogTitle>
+          <DialogDescription>
+            Select the dates and quantity you need. Your request will be sent to an admin for approval.
+          </DialogDescription>
+        </DialogHeader>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="startDate"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Start Date</FormLabel>
+                    <FormControl>
+                      <Input type="date" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="endDate"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>End Date</FormLabel>
+                    <FormControl>
+                      <Input type="date" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+             <FormField
+                control={form.control}
+                name="quantity"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Quantity</FormLabel>
+                    <FormControl>
+                      <Input type="number" min="1" max={material.quantityAvailable} {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
+              <Button type="submit" disabled={form.formState.isSubmitting}>
+                {form.formState.isSubmitting ? 'Submitting...' : 'Submit Request'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
+  )
 }
 
 export default function MaterialPage() {
@@ -109,9 +236,11 @@ export default function MaterialPage() {
                      )}
                   </CardContent>
                   <CardFooter>
-                    <Button className="w-full" disabled={item.quantityAvailable === 0}>
-                      {item.quantityAvailable > 0 ? 'Add to Reservation' : 'Unavailable'}
-                    </Button>
+                    <ReservationDialog material={item}>
+                       <Button className="w-full" disabled={item.quantityAvailable === 0}>
+                        {item.quantityAvailable > 0 ? 'Request Reservation' : 'Unavailable'}
+                      </Button>
+                    </ReservationDialog>
                   </CardFooter>
                 </Card>
               ))}

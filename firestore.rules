@@ -137,7 +137,13 @@ service cloud.firestore {
      * @principle Enforces document ownership within a user's private subcollection.
      */
     match /users/{userId}/materialReservations/{materialReservationId} {
-        allow get, list, create, update, delete: if isOwner(userId);
+        allow get, list: if isOwner(userId) || isAdmin();
+        allow create: if isOwner(userId) && request.resource.data.status == 'pending';
+        // Allow user to delete their own PENDING reservation. Admins can delete any.
+        allow delete: if (isOwner(userId) && resource.data.status == 'pending') || isAdmin();
+        // Admins can update any field (e.g., to approve/reject).
+        // Users cannot update their reservations once created.
+        allow update: if isAdmin();
     }
     
     /**
@@ -282,5 +288,3 @@ service cloud.firestore {
     }
   }
 }
-
-    

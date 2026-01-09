@@ -62,7 +62,9 @@ export interface MaterialReservation {
   id: string;
   userId: string;
   materialId: string;
-  tourId: string;
   quantityReserved: number;
+  startDate: string;
+  endDate: string;
+  status: 'pending' | 'approved' | 'rejected';
   reservationDate: string;
 }

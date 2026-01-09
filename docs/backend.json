@@ -146,10 +146,6 @@
           "type": "string",
           "description": "Reference to Material being reserved. (Relationship: Material 1:N MaterialReservation)"
         },
-        "tourId": {
-          "type": "string",
-          "description": "Reference to Tour for which the material is reserved. (Relationship: Tour 1:N MaterialReservation)"
-        },
         "quantityReserved": {
           "type": "number",
           "description": "The quantity of the material reserved."
@@ -158,15 +154,32 @@
           "type": "string",
           "description": "The date and time the reservation was made.",
           "format": "date-time"
+        },
+        "startDate": {
+            "type": "string",
+            "description": "The start date for the material reservation period.",
+            "format": "date-time"
+        },
+        "endDate": {
+            "type": "string",
+            "description": "The end date for the material reservation period.",
+            "format": "date-time"
+        },
+        "status": {
+            "type": "string",
+            "description": "The current status of the reservation.",
+            "enum": ["pending", "approved", "rejected"]
         }
       },
       "required": [
         "id",
         "userId",
         "materialId",
-        "tourId",
         "quantityReserved",
-        "reservationDate"
+        "reservationDate",
+        "startDate",
+        "endDate",
+        "status"
       ]
     },
     "AgeGroup": {
@@ -484,31 +497,11 @@
           "schema": {
             "$ref": "#/backend/entities/MaterialReservation"
           },
-          "description": "Stores material reservations for a specific user.  Includes denormalized 'userId' and 'tourId' for authorization independence.",
+          "description": "Stores material reservations for a specific user. This is the primary path for writes.",
           "params": [
             {
               "name": "userId",
               "description": "Unique identifier for the user."
-            },
-            {
-              "name": "materialReservationId",
-              "description": "Unique identifier for the material reservation."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/tours/{tourId}/materialReservations/{materialReservationId}",
-        "definition": {
-          "entityName": "MaterialReservation",
-          "schema": {
-            "$ref": "#/backend/entities/MaterialReservation"
-          },
-          "description": "Stores material reservations for a specific tour.  Includes denormalized 'userId' and 'tourId' for authorization independence.",
-          "params": [
-            {
-              "name": "tourId",
-              "description": "Unique identifier for the tour."
             },
             {
               "name": "materialReservationId",
@@ -587,6 +580,6 @@
         }
       }
     ],
-    "reasoning": "The Firestore structure is designed to efficiently manage tour-related data, material reservations, age groups, and user information for the 'Alpine Connect' application. To ensure security and scalability, I will create root-level collections for `tours`, `materials`, `ageGroups`, `users`, `documents`, and `posts`. `MaterialReservation` will be a subcollection of both `/users/{userId}` and `/tours/{tourId}`, to make data easily retrievable from both sides, and to avoid `get()` calls in the rules. `Comment` is a subcollection of `posts`. I am also defining a collection group for `materialReservations` to allow admins to query across all reservations for the Gear Management page.\n\nThis design promotes Authorization Independence.  For example, `MaterialReservation` documents contain the `userId` and `tourId`, avoiding the need to fetch parent document data for authorization.\n\nThe structure also supports the required QAPs.  `list` operations can be secured at each collection level.  Segregation of concerns allows specific rules for each collection (e.g., only admins can create tours, users can only create reservations for themselves)."
+    "reasoning": "The Firestore structure is designed to efficiently manage tour-related data, material reservations, age groups, and user information for the 'Alpine Connect' application. To ensure security and scalability, I will create root-level collections for `tours`, `materials`, `ageGroups`, `users`, `documents`, and `posts`. `MaterialReservation` will be a subcollection of `/users/{userId}` to enforce ownership and allow users to see all their reservations easily. `Comment` is a subcollection of `posts`. I am also defining a collection group for `materialReservations` to allow admins to query across all reservations for the Gear Management page.\n\nThis design promotes Authorization Independence. For example, `MaterialReservation` documents contain the `userId`, avoiding the need to fetch parent document data for authorization.\n\nThe structure also supports the required QAPs. `list` operations can be secured at each collection level. Segregation of concerns allows specific rules for each collection (e.g., only admins can create tours, users can only create reservations for themselves)."
   }
 }

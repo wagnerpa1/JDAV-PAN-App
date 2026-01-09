@@ -14,14 +14,58 @@ import {
   useFirestore,
   useMemoFirebase,
   useDoc,
+  updateDocumentNonBlocking
 } from '@/firebase';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { PackageIcon, AlertTriangleIcon, UserIcon, MountainIcon, CalendarIcon, ArrowLeftIcon } from 'lucide-react';
+import { PackageIcon, AlertTriangleIcon, UserIcon, MountainIcon, CalendarIcon, ArrowLeftIcon, CheckIcon, XIcon } from 'lucide-react';
 import type { Material, MaterialReservation, Tour, UserProfile } from '@/types';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { format, isSameDay } from 'date-fns';
+
+function ReservationStatusUpdater({ reservation }: { reservation: MaterialReservation }) {
+    const firestore = useFirestore();
+    const { toast } = useToast();
+
+    if (reservation.status !== 'pending') {
+        return null; // Don't show buttons if not pending
+    }
+    
+    // We need the original path to update the correct document.
+    // The collection group query loses the full path. We must reconstruct it.
+    const reservationRef = doc(firestore, 'users', reservation.userId, 'materialReservations', reservation.id);
+
+    const handleUpdateStatus = (newStatus: 'approved' | 'rejected') => {
+        updateDocumentNonBlocking(reservationRef, { status: newStatus });
+
+        // If approved, we need to trigger the quantity update.
+        // This is now handled by a Cloud Function listening for this status update.
+        if (newStatus === 'approved') {
+            toast({
+                title: 'Reservation Approved',
+                description: 'The material quantity will be updated shortly.'
+            });
+        } else {
+             toast({
+                title: 'Reservation Rejected',
+            });
+        }
+    }
+
+    return (
+        <div className="flex gap-2">
+            <Button size="icon" variant="ghost" className="text-green-600 hover:bg-green-100 hover:text-green-700" onClick={() => handleUpdateStatus('approved')}>
+                <CheckIcon className="h-4 w-4" />
+            </Button>
+            <Button size="icon" variant="ghost" className="text-red-600 hover:bg-red-100 hover:text-red-700" onClick={() => handleUpdateStatus('rejected')}>
+                <XIcon className="h-4 w-4" />
+            </Button>
+        </div>
+    )
+}
 
 function ReservationDetails({ reservation }: { reservation: MaterialReservation }) {
   const firestore = useFirestore();
@@ -32,13 +76,30 @@ function ReservationDetails({ reservation }: { reservation: MaterialReservation 
   );
   const { data: user, isLoading: userLoading } = useDoc<UserProfile>(userRef);
 
-  const tourRef = useMemoFirebase(
-    () => (reservation.tourId ? doc(firestore, 'tours', reservation.tourId) : null),
-    [firestore, reservation.tourId]
-  );
-  const { data: tour, isLoading: tourLoading } = useDoc<Tour>(tourRef);
+  const formatDateRange = (startDateIso: string, endDateIso: string) => {
+    const start = new Date(startDateIso);
+    const end = new Date(endDateIso);
+    if (isSameDay(start, end)) {
+      return format(start, 'PPP');
+    }
+    return `${format(start, 'PPP')} - ${format(end, 'PPP')}`;
+  };
 
-  if (userLoading || tourLoading) {
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+        case 'pending':
+            return <Badge variant="secondary">Pending</Badge>;
+        case 'approved':
+            return <Badge className="bg-green-100 text-green-800">Approved</Badge>;
+        case 'rejected':
+            return <Badge variant="destructive">Rejected</Badge>;
+        default:
+            return <Badge variant="outline">{status}</Badge>;
+    }
+  }
+
+
+  if (userLoading) {
     return <Skeleton className="h-12 w-full rounded-lg" />;
   }
 
@@ -48,14 +109,17 @@ function ReservationDetails({ reservation }: { reservation: MaterialReservation 
         <UserIcon className="h-4 w-4" />
         <span className="font-medium">{user?.name || 'Unknown User'}</span>
       </div>
-      <div className="flex items-center gap-3 text-sm text-muted-foreground">
-        <MountainIcon className="h-4 w-4" />
-        <Link href={`/tours/${tour?.id}`} className="hover:underline">{tour?.title || 'Unknown Tour'}</Link>
-        <div className="flex items-center gap-1 font-mono p-1 bg-background rounded">
+       <div className="flex items-center gap-3 text-sm text-muted-foreground">
+        <div className="flex items-center gap-1">
           <CalendarIcon className="h-4 w-4" />
+          <span>{formatDateRange(reservation.startDate, reservation.endDate)}</span>
+        </div>
+        <div className="font-mono p-1 bg-background rounded">
           <span>{reservation.quantityReserved}x</span>
         </div>
+        {getStatusBadge(reservation.status)}
       </div>
+      <ReservationStatusUpdater reservation={reservation} />
     </div>
   );
 }
@@ -161,7 +225,7 @@ export default function GearDetailPage() {
               </div>
             </CardHeader>
             <CardContent>
-              <h3 className="text-lg font-semibold mb-4">Current Reservations</h3>
+              <h3 className="text-lg font-semibold mb-4">Reservation Requests</h3>
               <MaterialReservationsList materialId={material.id} />
             </CardContent>
           </Card>
