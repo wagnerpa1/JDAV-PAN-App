@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
@@ -11,7 +11,6 @@ import {
   createUserWithEmailAndPassword,
   UserCredential,
 } from 'firebase/auth';
-
 
 import { Button } from '@/components/ui/button';
 import {
@@ -31,34 +30,32 @@ import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
-
-// Step 1: Define Schemas
-const stepOneSchema = z.object({
-  dob: z.string().refine((dob) => new Date(dob).toString() !== 'Invalid Date', {
-    message: 'Please enter a valid date of birth.',
-  }),
-});
-
-// Step 2 schema is now a function to make it dynamic based on age
-const createStepTwoSchema = (age: number | null) => {
-    let schema = z.object({
-        email: z.string().email(),
-        password: z.string().min(6, 'Password must be at least 6 characters.'),
-        parentEmail: z.string().optional(),
-    });
-
-    if (age !== null && age < 14) {
-        schema = schema.extend({
-            parentEmail: z.string().email('Please enter a valid parent email.'),
-        });
+// Define a single, comprehensive schema for the entire form
+const fullFormSchema = z
+  .object({
+    dob: z.string().refine((dob) => new Date(dob).toString() !== 'Invalid Date', {
+      message: 'Please enter a valid date of birth.',
+    }),
+    email: z.string().email(),
+    password: z.string().min(6, 'Password must be at least 6 characters.'),
+    parentEmail: z.string().optional(),
+  })
+  .refine(
+    (data) => {
+      const age = differenceInYears(new Date(), new Date(data.dob));
+      // If age is less than 14, parentEmail must be a valid email.
+      if (age < 14) {
+        return z.string().email().safeParse(data.parentEmail).success;
+      }
+      return true; // Otherwise, no validation is needed for parentEmail
+    },
+    {
+      message: "A valid parent's email is required for users under 14.",
+      path: ['parentEmail'], // Specify which field the error belongs to
     }
+  );
 
-    return schema;
-}
-
-type StepOneData = z.infer<typeof stepOneSchema>;
-// Infer type from a base schema, as it can be dynamic
-type StepTwoData = z.infer<ReturnType<typeof createStepTwoSchema>>;
+type FullFormData = z.infer<typeof fullFormSchema>;
 
 // Non-blocking sign-up and user creation
 function initiateEmailSignUpAndCreateUser(
@@ -88,54 +85,42 @@ function initiateEmailSignUpAndCreateUser(
     });
 }
 
-
 export default function SignupPage() {
   const [step, setStep] = useState(1);
-  const [dateOfBirth, setDateOfBirth] = useState<string | null>(null);
   const auth = useAuth();
   const firestore = useFirestore();
   const router = useRouter();
   const { toast } = useToast();
 
-  const stepOneForm = useForm<StepOneData>({
-    resolver: zodResolver(stepOneSchema),
+  const form = useForm<FullFormData>({
+    resolver: zodResolver(fullFormSchema),
     defaultValues: {
       dob: '',
-    },
-  });
-  
-  const age = dateOfBirth ? differenceInYears(new Date(), new Date(dateOfBirth)) : null;
-
-  const stepTwoForm = useForm<StepTwoData>({
-    resolver: zodResolver(createStepTwoSchema(age)),
-    defaultValues: {
       email: '',
       password: '',
       parentEmail: '',
     },
-    // Re-validate when age changes
-    context: { age },
+    mode: 'onChange', // Validate on change for better user experience
   });
-  
-  // Effect to update resolver when age changes
-  useState(() => {
-    stepTwoForm.trigger();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [age]);
 
+  const dobValue = form.watch('dob');
+  const age = useMemo(() => {
+    if (!dobValue) return null;
+    const birthDate = new Date(dobValue);
+    if (isNaN(birthDate.getTime())) return null;
+    return differenceInYears(new Date(), birthDate);
+  }, [dobValue]);
 
-  const handleStepOneSubmit = (data: StepOneData) => {
-    setDateOfBirth(data.dob);
-    setStep(2);
-  };
-
-  const handleStepTwoSubmit = (data: StepTwoData) => {
-    if (!auth || !firestore) return;
-
-    if (age !== null && age < 14 && !data.parentEmail) {
-      stepTwoForm.setError('parentEmail', { type: 'manual', message: "Parent's email is required for users under 14." });
-      return;
+  const handleNextStep = async () => {
+    // Only validate the 'dob' field before proceeding to the next step
+    const dobIsValid = await form.trigger('dob');
+    if (dobIsValid) {
+      setStep(2);
     }
+  };
+  
+  const handleFinalSubmit = (data: FullFormData) => {
+    if (!auth || !firestore) return;
     
     initiateEmailSignUpAndCreateUser(auth, firestore, data.email, data.password);
     toast({
@@ -146,7 +131,7 @@ export default function SignupPage() {
   };
 
   const getAgeGroupDescription = () => {
-    if (age === null) return '';
+    if (age === null) return "Let's create your account.";
     if (age < 14) {
       return "You are under 14. A parent's email is required for confirmation.";
     }
@@ -169,79 +154,82 @@ export default function SignupPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {step === 1 ? (
-            <Form {...stepOneForm}>
-              <form onSubmit={stepOneForm.handleSubmit(handleStepOneSubmit)} className="space-y-6">
-                <FormField
-                  control={stepOneForm.control}
-                  name="dob"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Date of Birth</FormLabel>
-                      <FormControl>
-                        <Input type="date" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <Button type="submit" className="w-full">
-                  Next
-                </Button>
-              </form>
-            </Form>
-          ) : (
-            <Form {...stepTwoForm}>
-              <form onSubmit={stepTwoForm.handleSubmit(handleStepTwoSubmit)} className="space-y-4">
-                <FormField
-                  control={stepTwoForm.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Email</FormLabel>
-                      <FormControl>
-                        <Input placeholder="name@example.com" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={stepTwoForm.control}
-                  name="password"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Password</FormLabel>
-                      <FormControl>
-                        <Input type="password" placeholder="••••••••" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                {age !== null && age < 18 && (
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(handleFinalSubmit)} className="space-y-4">
+              {step === 1 && (
+                <>
                   <FormField
-                    control={stepTwoForm.control}
-                    name="parentEmail"
+                    control={form.control}
+                    name="dob"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>
-                          Parent's Email {age !== null && age < 14 ? '(Required)' : '(Optional)'}
-                        </FormLabel>
+                        <FormLabel>Date of Birth</FormLabel>
                         <FormControl>
-                          <Input placeholder="parent@example.com" {...field} value={field.value ?? ''} />
+                          <Input type="date" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                )}
-                <Button type="submit" className="w-full">
-                  Sign Up
-                </Button>
-              </form>
-            </Form>
-          )}
+                  <Button type="button" onClick={handleNextStep} className="w-full">
+                    Next
+                  </Button>
+                </>
+              )}
+
+              {step === 2 && (
+                <>
+                  <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Email</FormLabel>
+                        <FormControl>
+                          <Input placeholder="name@example.com" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="password"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Password</FormLabel>
+                        <FormControl>
+                          <Input type="password" placeholder="••••••••" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  {age !== null && age < 18 && (
+                    <FormField
+                      control={form.control}
+                      name="parentEmail"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>
+                            Parent's Email {age !== null && age < 14 ? '(Required)' : '(Optional)'}
+                          </FormLabel>
+                          <FormControl>
+                            <Input placeholder="parent@example.com" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
+                   <Button onClick={() => setStep(1)} variant="outline" type="button">Back</Button>
+                  <Button type="submit" className="w-full">
+                    Sign Up
+                  </Button>
+                </>
+              )}
+            </form>
+          </Form>
           <div className="mt-6 text-center text-sm">
             Already have an account?{' '}
             <Link href="/login" className="font-medium text-primary hover:underline">
