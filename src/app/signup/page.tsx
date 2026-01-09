@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { differenceInYears } from 'date-fns';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc } from 'firebase/firestore';
 import {
   Auth,
   createUserWithEmailAndPassword,
@@ -105,13 +105,10 @@ export default function SignupPage() {
     const calculatedAge = differenceInYears(new Date(), new Date(data.dob));
     setAge(calculatedAge);
     setStep(2);
-
-    if (calculatedAge < 14) {
-      stepTwoForm.trigger('parentEmail'); // Optional: trigger validation early
-    }
   };
 
   const handleStepTwoSubmit = (data: StepTwoData) => {
+    if (!auth || !firestore) return;
     initiateEmailSignUpAndCreateUser(auth, firestore, data.email, data.password);
     toast({
       title: 'Account Creation Initiated',
@@ -205,7 +202,7 @@ export default function SignupPage() {
                           Parent's Email {age < 14 ? '(Required)' : '(Optional)'}
                         </FormLabel>
                         <FormControl>
-                          <Input placeholder="parent@example.com" {...field} />
+                          <Input placeholder="parent@example.com" {...field} value={field.value || ''} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
