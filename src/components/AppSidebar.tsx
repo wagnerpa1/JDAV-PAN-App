@@ -19,6 +19,7 @@ import {
   LogOutIcon,
   LogInIcon,
   ShieldCheckIcon,
+  NewspaperIcon,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -109,6 +110,7 @@ export function AppSidebar() {
     { href: "/calendar", label: "Calendar", icon: CalendarIcon },
     { href: "/tours", label: "Tours", icon: MountainIcon },
     { href: "/material", label: "Material", icon: TentIcon },
+    { href: "/news", label: "News", icon: NewspaperIcon },
     { href: "/documents", label: "Documents", icon: FileTextIcon },
     { href: "/profile", label: "Profile", icon: UserIcon },
     { href: "/admin", label: "Admin", icon: ShieldCheckIcon },
@@ -156,5 +158,3 @@ export function AppSidebar() {
     </Sheet>
   );
 }
-
-    

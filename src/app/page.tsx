@@ -49,10 +49,10 @@ export default function Home() {
       description: 'Reserve equipment for your next adventure.',
     },
     {
-      title: 'News',
-      href: '/news',
+      title: 'Documents',
+      href: '/documents',
       icon: <NewspaperIcon className="h-6 w-6 text-primary" />,
-      description: 'Read the latest news from the bulletin board.',
+      description: 'View shared documents.',
     },
   ];
 

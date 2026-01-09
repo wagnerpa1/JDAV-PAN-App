@@ -17,6 +17,7 @@ import {
   DatabaseZapIcon,
   LockIcon,
   MountainIcon,
+  NewspaperIcon,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -30,6 +31,12 @@ const adminUtilities = [
     href: '/admin/tours',
     icon: <MountainIcon className="h-6 w-6 text-primary" />,
     description: 'Create, edit, and manage all tours.',
+  },
+  {
+    title: 'News Management',
+    href: '/news',
+    icon: <NewspaperIcon className="h-6 w-6 text-primary" />,
+    description: 'Create and manage news and updates.',
   },
   {
     title: 'Document Management',
