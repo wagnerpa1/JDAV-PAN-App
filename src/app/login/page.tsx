@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/button';
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -15,11 +14,12 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useAuth, initiateEmailSignUp, initiateEmailSignIn, initiateAnonymousSignIn, useUser } from '@/firebase';
+import { useAuth, initiateEmailSignIn, useUser } from '@/firebase';
 import { LogInIcon } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
+import Link from 'next/link';
 
 const formSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email address.' }),
@@ -69,23 +69,14 @@ export default function LoginPage() {
                 <Skeleton className="h-10 flex-1" />
                 <Skeleton className="h-10 flex-1" />
             </div>
-             <Skeleton className="h-10 w-full" />
           </CardContent>
         </Card>
       </div>
     )
   }
 
-  const handleSignUp = (data: FormData) => {
-    initiateEmailSignUp(auth, data.email, data.password);
-  };
-
   const handleSignIn = (data: FormData) => {
     initiateEmailSignIn(auth, data.email, data.password);
-  };
-
-  const handleAnonymousSignIn = () => {
-    initiateAnonymousSignIn(auth);
   };
 
   return (
@@ -95,12 +86,12 @@ export default function LoginPage() {
           <div className="mx-auto mb-4 inline-block rounded-full bg-primary p-3">
             <LogInIcon className="h-8 w-8 text-primary-foreground" />
           </div>
-          <CardTitle>Welcome</CardTitle>
-          <CardDescription>Sign in to your account or create a new one</CardDescription>
+          <CardTitle>Welcome Back</CardTitle>
+          <CardDescription>Sign in to continue to Alpine Connect</CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
-            <form className="space-y-6">
+            <form className="space-y-6" onSubmit={form.handleSubmit(handleSignIn)}>
               <FormField
                 control={form.control}
                 name="email"
@@ -127,14 +118,9 @@ export default function LoginPage() {
                   </FormItem>
                 )}
               />
-              <div className="flex flex-col gap-4 sm:flex-row">
-                <Button onClick={form.handleSubmit(handleSignIn)} className="flex-1">
-                  Sign In
-                </Button>
-                <Button onClick={form.handleSubmit(handleSignUp)} variant="secondary" className="flex-1">
-                  Sign Up
-                </Button>
-              </div>
+              <Button type="submit" className="w-full">
+                Sign In
+              </Button>
             </form>
           </Form>
           <div className="my-6 flex items-center">
@@ -142,8 +128,8 @@ export default function LoginPage() {
             <span className="mx-4 flex-shrink text-xs uppercase text-muted-foreground">Or</span>
             <div className="flex-grow border-t border-muted" />
           </div>
-          <Button onClick={handleAnonymousSignIn} variant="outline" className="w-full">
-            Continue as Guest
+           <Button asChild variant="outline" className="w-full">
+             <Link href="/signup">Create a New Account</Link>
           </Button>
         </CardContent>
       </Card>
