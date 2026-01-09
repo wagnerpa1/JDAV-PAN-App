@@ -19,6 +19,7 @@ import { useAuth, initiateEmailSignUp, initiateEmailSignIn, initiateAnonymousSig
 import { LogInIcon } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const formSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email address.' }),
@@ -29,7 +30,7 @@ type FormData = z.infer<typeof formSchema>;
 
 export default function LoginPage() {
   const auth = useAuth();
-  const { user } = useUser();
+  const { user, isUserLoading } = useUser();
   const router = useRouter();
 
   const form = useForm<FormData>({
@@ -41,10 +42,39 @@ export default function LoginPage() {
   });
 
   useEffect(() => {
-    if (user) {
+    if (!isUserLoading && user) {
       router.push('/');
     }
-  }, [user, router]);
+  }, [isUserLoading, user, router]);
+
+  if (isUserLoading || user) {
+    return (
+      <div className="container mx-auto flex h-full items-center justify-center p-4">
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center">
+             <Skeleton className="h-16 w-16 rounded-full mx-auto mb-4" />
+             <Skeleton className="h-8 w-48 mx-auto mb-2" />
+             <Skeleton className="h-4 w-64 mx-auto" />
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="space-y-2">
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-10 w-full" />
+            </div>
+             <div className="space-y-2">
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-10 w-full" />
+            </div>
+            <div className="flex flex-col gap-4 sm:flex-row">
+                <Skeleton className="h-10 flex-1" />
+                <Skeleton className="h-10 flex-1" />
+            </div>
+             <Skeleton className="h-10 w-full" />
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
 
   const handleSignUp = (data: FormData) => {
     initiateEmailSignUp(auth, data.email, data.password);

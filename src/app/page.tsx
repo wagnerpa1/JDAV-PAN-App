@@ -1,12 +1,59 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { MountainIcon, TentIcon, NewspaperIcon } from "lucide-react";
-import Link from "next/link";
+'use client';
+
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useUser } from '@/firebase';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { MountainIcon, TentIcon, NewspaperIcon } from 'lucide-react';
+import Link from 'next/link';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function Home() {
+  const { user, isUserLoading } = useUser();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!isUserLoading && !user) {
+      router.push('/login');
+    }
+  }, [isUserLoading, user, router]);
+
+  if (isUserLoading || !user) {
+    return (
+      <div className="flex flex-col items-center justify-start p-4 pt-10 sm:p-6 md:p-8 lg:p-12">
+        <div className="text-center mb-10 md:mb-16">
+          <Skeleton className="h-20 w-20 rounded-full mx-auto mb-4" />
+          <Skeleton className="h-10 w-96 mx-auto mb-4" />
+          <Skeleton className="h-6 w-80 mx-auto" />
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 w-full max-w-6xl">
+          <Skeleton className="h-28 w-full" />
+          <Skeleton className="h-28 w-full" />
+          <Skeleton className="h-28 w-full" />
+        </div>
+      </div>
+    );
+  }
+
   const dashboardItems = [
-    { title: "Next Tour", href: "/tours", icon: <MountainIcon className="h-6 w-6 text-primary" />, description: "View your upcoming tour." },
-    { title: "Material Reservations", href: "/reservations", icon: <TentIcon className="h-6 w-6 text-primary" />, description: "Reserve equipment for your next adventure." },
-    { title: "News", href: "/news", icon: <NewspaperIcon className="h-6 w-6 text-primary" />, description: "Read the latest news from the bulletin board." },
+    {
+      title: 'Next Tour',
+      href: '/tours',
+      icon: <MountainIcon className="h-6 w-6 text-primary" />,
+      description: 'View your upcoming tour.',
+    },
+    {
+      title: 'Material Reservations',
+      href: '/material',
+      icon: <TentIcon className="h-6 w-6 text-primary" />,
+      description: 'Reserve equipment for your next adventure.',
+    },
+    {
+      title: 'News',
+      href: '/news',
+      icon: <NewspaperIcon className="h-6 w-6 text-primary" />,
+      description: 'Read the latest news from the bulletin board.',
+    },
   ];
 
   return (
