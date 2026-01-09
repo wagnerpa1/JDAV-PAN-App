@@ -22,8 +22,8 @@ import {
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
-import { useUser, useAuth, useDoc, useFirestore, useMemoFirebase } from "@/firebase";
+import { useState, useMemo } from "react";
+import { useUser, useAuth, useDoc, useFirestore } from "@/firebase";
 import { signOut } from "firebase/auth";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Skeleton } from "./ui/skeleton";
@@ -36,7 +36,7 @@ function UserAuth() {
   const auth = useAuth();
   const firestore = useFirestore();
 
-  const userDocRef = useMemoFirebase(() => {
+  const userDocRef = useMemo(() => {
     if (!user) return null;
     return doc(firestore, 'users', user.uid);
   }, [firestore, user]);
@@ -64,7 +64,9 @@ function UserAuth() {
   }
 
   const handleSignOut = () => {
-    signOut(auth);
+    if (auth) {
+      signOut(auth);
+    }
   };
 
   const getInitials = (name?: string) => {
@@ -155,5 +157,3 @@ export function AppSidebar() {
     </Sheet>
   );
 }
-
-    

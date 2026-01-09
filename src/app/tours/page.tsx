@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react';
 import { collection, query, where, orderBy } from 'firebase/firestore';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { useCollection, useFirestore } from '@/firebase';
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -17,7 +17,7 @@ export default function ToursPage() {
 
   // Memoize the Firestore query to prevent re-creating it on every render.
   // This is critical for performance and to avoid infinite loops in useCollection.
-  const toursQuery = useMemoFirebase(() => {
+  const toursQuery = useMemo(() => {
     if (!firestore) return null;
     const today = new Date().toISOString();
     return query(

@@ -9,7 +9,6 @@ import {
 import {
   useCollection,
   useFirestore,
-  useMemoFirebase,
 } from '@/firebase';
 import {
   Card,
@@ -36,7 +35,7 @@ import { Button } from '@/components/ui/button';
 export default function GearManagementPage() {
   const firestore = useFirestore();
 
-  const materialsQuery = useMemoFirebase(
+  const materialsQuery = useMemo(
     () => {
       if (!firestore) return null;
       return query(collection(firestore, 'materials'), orderBy('name', 'asc'))

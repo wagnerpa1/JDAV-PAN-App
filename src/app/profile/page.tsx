@@ -1,10 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { useUser, useDoc, useFirestore, useMemoFirebase, updateDocumentNonBlocking } from '@/firebase';
+import { useUser, useDoc, useFirestore, updateDocumentNonBlocking } from '@/firebase';
 import { doc } from 'firebase/firestore';
-import { Card, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
@@ -97,7 +97,7 @@ export default function ProfilePage() {
   const router = useRouter();
   const firestore = useFirestore();
 
-  const userDocRef = useMemoFirebase(() => {
+  const userDocRef = useMemo(() => {
     if (!user) return null;
     return doc(firestore, 'users', user.uid);
   }, [firestore, user]);
@@ -132,9 +132,6 @@ export default function ProfilePage() {
                     <Skeleton className="h-8 w-48 mx-auto mb-2" />
                     <Skeleton className="h-4 w-32 mx-auto" />
                 </CardHeader>
-                <CardFooter className="mt-6">
-                     <Skeleton className="h-24 w-full" />
-                </CardFooter>
             </Card>
         </div>
       </div>
@@ -164,7 +161,7 @@ export default function ProfilePage() {
                 </Avatar>
                 <div className="flex w-full justify-center items-center gap-2">
                     <CardTitle className="text-2xl">{userProfile.name}</CardTitle>
-                    <EditNameDialog userProfile={userProfile} userDocRef={userDocRef}/>
+                    {userDocRef && <EditNameDialog userProfile={userProfile} userDocRef={userDocRef}/>}
                 </div>
                  <p className="text-sm text-muted-foreground">{userProfile.email}</p>
                 <CardDescription className="capitalize bg-secondary text-secondary-foreground px-2 py-1 rounded-md text-sm mt-2">

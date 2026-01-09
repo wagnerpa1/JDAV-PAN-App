@@ -1,8 +1,8 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { collection, query, orderBy, doc, writeBatch, serverTimestamp } from 'firebase/firestore';
-import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
+import { collection, query, orderBy } from 'firebase/firestore';
+import { useCollection, useFirestore, useUser, addDocumentNonBlocking } from '@/firebase';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -16,7 +16,6 @@ import * as z from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import type { Material } from '@/types';
 
 const reservationSchema = z.object({
@@ -149,7 +148,7 @@ function ReservationDialog({ material, children }: { material: Material, childre
 export default function MaterialPage() {
   const firestore = useFirestore();
 
-  const materialsQuery = useMemoFirebase(() => {
+  const materialsQuery = useMemo(() => {
     if (!firestore) return null;
     return query(
       collection(firestore, 'materials'),

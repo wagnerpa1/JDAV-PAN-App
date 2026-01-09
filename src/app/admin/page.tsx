@@ -1,14 +1,13 @@
 'use client';
 
 import { useMemo } from 'react';
-import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
+import { useUser, useFirestore, useDoc } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
-  CardDescription,
 } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
@@ -20,10 +19,7 @@ import {
   PackageIcon,
 } from 'lucide-react';
 import Link from 'next/link';
-
-interface UserProfile {
-  role: 'user' | 'admin';
-}
+import type { UserProfile } from '@/types';
 
 const adminUtilities = [
   {
@@ -91,7 +87,7 @@ export default function AdminPage() {
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
 
-  const userDocRef = useMemoFirebase(
+  const userDocRef = useMemo(
     () => (user ? doc(firestore, 'users', user.uid) : null),
     [firestore, user]
   );
@@ -129,5 +125,3 @@ export default function AdminPage() {
     </div>
   );
 }
-
-    
