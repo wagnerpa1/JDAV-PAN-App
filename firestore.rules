@@ -22,20 +22,23 @@
  *   currently disabled, pending the implementation of an admin role.
  * - /documents/{documentId}: Publicly readable document metadata. Writes are
  *   restricted to admin users.
+ * - /posts/{postId}: Publicly readable sticky notes. Any signed-in user can create,
+ *   update, or delete their own posts.
+ * - /posts/{postId}/comments/{commentId}: Publicly readable comments. Any
+ *   signed-in user can comment on any post.
  *
  * ## Key Security Decisions
  * - User Enumeration is Disallowed: Listing users from the top-level `/users`
  *   collection is forbidden to protect user privacy.
- * - Ownership via `leaderId`: Tours are controlled by the user specified in the
- *   `leaderId` field, establishing a clear ownership model for public documents.
+ * - Ownership via `leaderId` or `authorId`: Documents are controlled by the user
+ *   specified in an ownership field, establishing a clear ownership model.
  * - Single Source of Truth for Writes: Material reservations can only be created
  *   and modified through the user's private subcollection
  *   (`/users/{userId}/materialReservations`). The corresponding path under a tour
  *   is read-only to prevent data conflicts.
- * - Denormalization for Authorization: Documents like `MaterialReservation` and
- *   `Tour` contain necessary owner/leader IDs (`userId`, `leaderId`) directly on
- *   the document. This avoids slow and costly `get()` calls in most rules, making
- *   them more performant and secure.
+ * - Denormalization for Authorization: Documents contain necessary owner IDs
+ *   directly on the document. This avoids slow and costly `get()` calls in most
+ *   rules, making them more performant and secure.
  */
 rules_version = '2';
 service cloud.firestore {
@@ -226,7 +229,33 @@ service cloud.firestore {
       allow get, list: if isSignedIn();
       allow create, update, delete: if isAdmin();
     }
+
+    /**
+     * @description Manages sticky note posts. Any authenticated user can read
+     *   and create posts. Users can only modify or delete their own posts.
+     * @path /posts/{postId}
+     * @allow (create) Any authenticated user creating a post.
+     * @deny (update) A user attempting to modify another user's post.
+     * @principle Enables a public, collaborative board with owner-writes.
+     */
+    match /posts/{postId} {
+      allow get, list: if true;
+      allow create: if isSignedIn() && request.resource.data.authorId == request.auth.uid;
+      allow update, delete: if isExistingOwner(resource.data.authorId);
+
+      /**
+       * @description Manages comments on a post. Any authenticated user can
+       *   read and create comments. Users can only modify/delete their own comments.
+       * @path /posts/{postId}/comments/{commentId}
+       * @allow (create) Any authenticated user adding a comment to a post.
+       * @deny (delete) A user attempting to delete another user's comment.
+       * @principle Fosters open discussion with owner-controlled content.
+       */
+      match /comments/{commentId} {
+        allow get, list: if true;
+        allow create: if isSignedIn() && request.resource.data.authorId == request.auth.uid && request.resource.data.postId == postId;
+        allow update, delete: if isExistingOwner(resource.data.authorId);
+      }
+    }
   }
 }
-
-    

@@ -30,4 +30,20 @@ export interface Participant {
     user?: UserProfile; // Optional: denormalized user data
 }
 
-    
+export interface Post {
+    id: string;
+    content: string;
+    authorId: string;
+    authorName: string;
+    createdAt: string;
+    color: string;
+}
+
+export interface Comment {
+    id: string;
+    postId: string;
+    content: string;
+    authorId: string;
+    authorName: string;
+    createdAt: string;
+}

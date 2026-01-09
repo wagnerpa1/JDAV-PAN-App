@@ -300,6 +300,88 @@
         "uploaderId",
         "uploadedAt"
       ]
+    },
+    "Post": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Post",
+      "type": "object",
+      "description": "Represents a sticky note post on the news board.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Post entity."
+        },
+        "content": {
+          "type": "string",
+          "description": "The text content of the sticky note."
+        },
+        "authorId": {
+          "type": "string",
+          "description": "The UID of the user who created the post."
+        },
+        "authorName": {
+          "type": "string",
+          "description": "The display name of the user who created the post."
+        },
+        "color": {
+          "type": "string",
+          "description": "The background color of the sticky note."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "The date and time the post was created.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "content",
+        "authorId",
+        "authorName",
+        "color",
+        "createdAt"
+      ]
+    },
+    "Comment": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Comment",
+      "type": "object",
+      "description": "Represents a comment on a post.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Comment entity."
+        },
+        "postId": {
+          "type": "string",
+          "description": "The ID of the post this comment belongs to."
+        },
+        "content": {
+          "type": "string",
+          "description": "The text content of the comment."
+        },
+        "authorId": {
+          "type": "string",
+          "description": "The UID of the user who created the comment."
+        },
+        "authorName": {
+          "type": "string",
+          "description": "The display name of the user who created the comment."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "The date and time the comment was created.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "postId",
+        "content",
+        "authorId",
+        "authorName",
+        "createdAt"
+      ]
     }
   },
   "auth": {
@@ -449,10 +531,44 @@
             }
           ]
         }
+      },
+       {
+        "path": "/posts/{postId}",
+        "definition": {
+          "entityName": "Post",
+          "schema": {
+            "$ref": "#/backend/entities/Post"
+          },
+          "description": "Stores sticky note posts. The 'postId' parameter uniquely identifies each post.",
+          "params": [
+            {
+              "name": "postId",
+              "description": "Unique identifier for the post."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/posts/{postId}/comments/{commentId}",
+        "definition": {
+          "entityName": "Comment",
+          "schema": {
+            "$ref": "#/backend/entities/Comment"
+          },
+          "description": "Stores comments for a specific post. The 'commentId' parameter uniquely identifies each comment.",
+          "params": [
+            {
+              "name": "postId",
+              "description": "Unique identifier for the post."
+            },
+            {
+              "name": "commentId",
+              "description": "Unique identifier for the comment."
+            }
+          ]
+        }
       }
     ],
-    "reasoning": "The Firestore structure is designed to efficiently manage tour-related data, material reservations, age groups, and user information for the 'Alpine Connect' application. To ensure security and scalability, I will create root-level collections for `tours`, `materials`, `ageGroups`, `users`, and `documents`. `MaterialReservation` will be a subcollection of both `/users/{userId}` and `/tours/{tourId}`, to make data easily retrievable from both sides, and to avoid `get()` calls in the rules.\n\nThis design promotes Authorization Independence.  For example, `MaterialReservation` documents contain the `userId` and `tourId`, avoiding the need to fetch parent document data for authorization.\n\nThe structure also supports the required QAPs.  `list` operations can be secured at each collection level.  Segregation of concerns allows specific rules for each collection (e.g., only admins can create tours, users can only create reservations for themselves)."
+    "reasoning": "The Firestore structure is designed to efficiently manage tour-related data, material reservations, age groups, and user information for the 'Alpine Connect' application. To ensure security and scalability, I will create root-level collections for `tours`, `materials`, `ageGroups`, `users`, `documents`, and `posts`. `MaterialReservation` will be a subcollection of both `/users/{userId}` and `/tours/{tourId}`, to make data easily retrievable from both sides, and to avoid `get()` calls in the rules. `Comment` is a subcollection of `posts`. \n\nThis design promotes Authorization Independence.  For example, `MaterialReservation` documents contain the `userId` and `tourId`, avoiding the need to fetch parent document data for authorization.\n\nThe structure also supports the required QAPs.  `list` operations can be secured at each collection level.  Segregation of concerns allows specific rules for each collection (e.g., only admins can create tours, users can only create reservations for themselves)."
   }
 }
-
-    
