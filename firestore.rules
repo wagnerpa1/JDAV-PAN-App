@@ -112,23 +112,26 @@ service cloud.firestore {
                     && request.resource.data.email == resource.data.email
                     && request.resource.data.role == resource.data.role;
       allow delete: if isExistingOwner(userId);
+    }
 
-      /**
-       * @description Manages a user's material reservations. Users can fully
-       *   control their own list of reservations. This is the source of truth for writes.
-       * @path /users/{userId}/materialReservations/{materialReservationId}
-       * @allow (create) A user creating a reservation for themselves under their own path:
-       *   `create /users/user_abc/materialReservations/res_123` where auth.uid is 'user_abc'.
-       * @deny (list) A user trying to list reservations for another user:
-       *   `list /users/user_xyz/materialReservations` where auth.uid is 'user_abc'.
-       * @principle Enforces document ownership within a user's private subcollection.
-       */
-      match /materialReservations/{materialReservationId} {
-        allow get, list: if isOwner(userId);
-        allow create: if isOwner(userId) && request.resource.data.userId == userId;
-        allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
-        allow delete: if isExistingOwner(userId);
-      }
+    /**
+     * @description Manages a user's material reservations. Users can fully
+     *   control their own list of reservations. This is the source of truth for writes.
+     * @path /users/{userId}/materialReservations/{materialReservationId}
+     * @allow (create) A user creating a reservation for themselves under their own path:
+     *   `create /users/user_abc/materialReservations/res_123` where auth.uid is 'user_abc'.
+     * @deny (list) A user trying to list reservations for another user:
+     *   `list /users/user_xyz/materialReservations` where auth.uid is 'user_abc'.
+     * @principle Enforces document ownership within a user's private subcollection.
+     */
+    match /users/{userId}/materialReservations/{materialReservationId} {
+        allow get, list, create, update, delete: if isOwner(userId);
+    }
+    
+    // Admins can read all reservations
+    match /materialReservations/{reservationId} {
+        allow get, list: if isAdmin();
+        allow create, update, delete: if false;
     }
 
     /**

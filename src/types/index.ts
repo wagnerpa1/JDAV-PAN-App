@@ -1,4 +1,5 @@
 
+
 export interface Tour {
     id: string;
     title: string;
@@ -46,4 +47,22 @@ export interface Comment {
     authorId: string;
     authorName: string;
     createdAt: string;
+}
+
+export interface Material {
+  id: string;
+  name: string;
+  description: string;
+  quantityAvailable: number;
+  price: number;
+  sizes?: Record<string, number>;
+}
+
+export interface MaterialReservation {
+  id: string;
+  userId: string;
+  materialId: string;
+  tourId: string;
+  quantityReserved: number;
+  reservationDate: string;
 }
