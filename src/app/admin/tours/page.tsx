@@ -28,15 +28,7 @@ import {
   PencilIcon,
 } from 'lucide-react';
 import { format } from 'date-fns';
-
-interface Tour {
-  id: string;
-  title: string;
-  location: string;
-  startDate: string; // ISO string
-  endDate: string; // ISO string
-  participantLimit: number;
-}
+import type { Tour } from '@/types';
 
 export default function TourManagementPage() {
   const firestore = useFirestore();

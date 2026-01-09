@@ -23,15 +23,8 @@ import {
   eachDayOfInterval,
   isSameDay,
 } from 'date-fns';
-import type { DayModifiers, DayPicker } from 'react-day-picker';
-
-interface Tour {
-  id: string;
-  title: string;
-  location: string;
-  startDate: string; // ISO string
-  endDate: string; // ISO string
-}
+import type { DayModifiers } from 'react-day-picker';
+import type { Tour } from '@/types';
 
 export default function CalendarPage() {
   const firestore = useFirestore();

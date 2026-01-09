@@ -202,18 +202,47 @@
         "role": {
           "type": "string",
           "description": "The user's role in the application.",
-          "enum": ["user", "admin"]
+          "enum": [
+            "user",
+            "admin"
+          ]
         },
         "profilePictureUrl": {
-            "type": "string",
-            "description": "URL of the user's profile picture.",
-            "format": "uri"
+          "type": "string",
+          "description": "URL of the user's profile picture.",
+          "format": "uri"
         }
       },
       "required": [
         "id",
         "email",
         "role"
+      ]
+    },
+    "Participant": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Participant",
+      "type": "object",
+      "description": "Represents a user who has signed up for a tour.",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "The UID of the user who is participating."
+        },
+        "tourId": {
+          "type": "string",
+          "description": "The ID of the tour they are participating in."
+        },
+        "joinedAt": {
+          "type": "string",
+          "description": "The date and time the user joined the tour.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "userId",
+        "tourId",
+        "joinedAt"
       ]
     },
     "Document": {
@@ -274,6 +303,26 @@
             {
               "name": "tourId",
               "description": "Unique identifier for the tour."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/tours/{tourId}/participants/{userId}",
+        "definition": {
+          "entityName": "Participant",
+          "schema": {
+            "$ref": "#/backend/entities/Participant"
+          },
+          "description": "Stores participants for a specific tour. The document ID is the user's UID.",
+          "params": [
+            {
+              "name": "tourId",
+              "description": "Unique identifier for the tour."
+            },
+            {
+              "name": "userId",
+              "description": "The UID of the participating user."
             }
           ]
         }
@@ -386,5 +435,4 @@
     "reasoning": "The Firestore structure is designed to efficiently manage tour-related data, material reservations, age groups, and user information for the 'Alpine Connect' application. To ensure security and scalability, I will create root-level collections for `tours`, `materials`, `ageGroups`, `users`, and `documents`. `MaterialReservation` will be a subcollection of both `/users/{userId}` and `/tours/{tourId}`, to make data easily retrievable from both sides, and to avoid `get()` calls in the rules.\n\nThis design promotes Authorization Independence.  For example, `MaterialReservation` documents contain the `userId` and `tourId`, avoiding the need to fetch parent document data for authorization.\n\nThe structure also supports the required QAPs.  `list` operations can be secured at each collection level.  Segregation of concerns allows specific rules for each collection (e.g., only admins can create tours, users can only create reservations for themselves)."
   }
 }
-
     

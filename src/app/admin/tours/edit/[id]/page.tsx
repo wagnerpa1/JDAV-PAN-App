@@ -8,18 +8,8 @@ import { TourForm } from '../../TourForm';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertTriangleIcon } from 'lucide-react';
+import type { Tour } from '@/types';
 
-interface Tour {
-  id: string;
-  title: string;
-  startDate: string;
-  endDate: string;
-  location: string;
-  description: string;
-  participantLimit: number;
-  ageGroupId: string;
-  leaderId: string;
-}
 
 export default function EditTourPage() {
   const { id } = useParams();

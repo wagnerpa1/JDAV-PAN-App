@@ -145,6 +145,27 @@ service cloud.firestore {
       allow delete: if resource != null && (isOwner(resource.data.leaderId) || isAdmin());
 
       /**
+       * @description Manages participants for a tour. Users can join (create) their own
+       *   participant document. Only the tour leader or admin can see the full list of participants.
+       * @path /tours/{tourId}/participants/{userId}
+       * @allow (create) A user joining a tour by creating their own participant document:
+       *   `create /tours/tour_123/participants/user_abc` where auth.uid is 'user_abc'.
+       * @deny (list) A regular user trying to see who else is on the tour.
+       * @principle Protects participant privacy while allowing leaders to manage their tour.
+       */
+      match /participants/{userId} {
+        // A user can read their own participation status.
+        allow get: if isOwner(userId) || isTourLeader(tourId) || isAdmin();
+        // Only the tour leader or an admin can see the full list of participants.
+        allow list: if isTourLeader(tourId) || isAdmin();
+        // A user can only create their own participant document.
+        allow create: if isOwner(userId) && request.resource.data.userId == userId && request.resource.data.tourId == tourId;
+        // A user can leave the tour (delete their document). The leader/admin can also remove them.
+        allow delete: if isOwner(userId) || isTourLeader(tourId) || isAdmin();
+        allow update: if false; // Participation is a binary state (join/leave).
+      }
+
+      /**
        * @description A denormalized, read-only view of reservations for a tour. This allows the tour
        *   leader and the reservation owner to view the data, but not write to it.
        * @path /tours/{tourId}/materialReservations/{materialReservationId}
@@ -207,3 +228,5 @@ service cloud.firestore {
     }
   }
 }
+
+    

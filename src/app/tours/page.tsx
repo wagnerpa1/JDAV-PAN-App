@@ -9,15 +9,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { MountainIcon, MapPinIcon, CalendarIcon, AlertTriangleIcon } from 'lucide-react';
 import { format, isSameDay } from 'date-fns';
+import type { Tour } from '@/types';
 
-// Define the shape of a Tour document
-interface Tour {
-  id: string;
-  title: string;
-  location: string;
-  startDate: string; // Stored as ISO string
-  endDate: string; // Stored as ISO string
-}
 
 export default function ToursPage() {
   const firestore = useFirestore();

@@ -8,13 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Skeleton } from '@/components/ui/skeleton';
 import { UserIcon } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-
-interface UserProfile {
-    id: string;
-    email: string;
-    role: 'user' | 'admin';
-    profilePictureUrl?: string;
-}
+import type { UserProfile } from '@/types';
 
 export default function ProfilePage() {
   const { user, isUserLoading } = useUser();
