@@ -5,12 +5,18 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { differenceInYears } from 'date-fns';
+import { doc, setDoc } from 'firebase/firestore';
+import {
+  Auth,
+  createUserWithEmailAndPassword,
+  UserCredential,
+} from 'firebase/auth';
+
 
 import { Button } from '@/components/ui/button';
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -18,10 +24,13 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useAuth, initiateEmailSignUp } from '@/firebase';
+import { useAuth, useFirestore } from '@/firebase';
 import { UserPlusIcon } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useToast } from '@/hooks/use-toast';
+import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+
 
 // Step 1: Define Schemas
 const stepOneSchema = z.object({
@@ -39,11 +48,42 @@ const stepTwoSchema = z.object({
 type StepOneData = z.infer<typeof stepOneSchema>;
 type StepTwoData = z.infer<typeof stepTwoSchema>;
 
+// Non-blocking sign-up and user creation
+function initiateEmailSignUpAndCreateUser(
+  auth: Auth,
+  firestore: any,
+  email: string,
+  password: string
+): void {
+  createUserWithEmailAndPassword(auth, email, password)
+    .then((userCredential: UserCredential) => {
+      // User created in Auth, now create Firestore document
+      const user = userCredential.user;
+      const userDocRef = doc(firestore, 'users', user.uid);
+      const newUser = {
+        id: user.uid,
+        email: user.email,
+        role: 'user', // Default role
+        profilePictureUrl: '',
+      };
+      // Use non-blocking setDoc
+      setDocumentNonBlocking(userDocRef, newUser, { merge: true });
+    })
+    .catch((error) => {
+      // Handle Auth errors (e.g., email already in use)
+      console.error('Error during sign up or user creation:', error);
+      // Optionally, you can use a toast to notify the user of the error
+    });
+}
+
+
 export default function SignupPage() {
   const [step, setStep] = useState(1);
   const [age, setAge] = useState<number | null>(null);
   const auth = useAuth();
+  const firestore = useFirestore();
   const router = useRouter();
+  const { toast } = useToast();
 
   const stepOneForm = useForm<StepOneData>({
     resolver: zodResolver(stepOneSchema),
@@ -64,19 +104,21 @@ export default function SignupPage() {
   };
 
   const handleStepTwoSubmit = (data: StepTwoData) => {
-    // In a real app, you would also save the parentEmail and handle the confirmation flow.
-    initiateEmailSignUp(auth, data.email, data.password);
-    // After signup is initiated, Firebase listener in layout will handle redirect
+    initiateEmailSignUpAndCreateUser(auth, firestore, data.email, data.password);
+    toast({
+      title: 'Account Creation Initiated',
+      description: "We're setting up your account. You'll be redirected shortly.",
+    });
     router.push('/');
   };
 
   const getAgeGroupDescription = () => {
     if (age === null) return '';
     if (age < 14) {
-      return 'You are under 14. A parent\'s email is required for confirmation.';
+      return "You are under 14. A parent's email is required for confirmation.";
     }
     if (age >= 14 && age < 18) {
-      return 'You are between 14 and 18. A parent\'s email is recommended.';
+      return "You are between 14 and 18. A parent's email is recommended.";
     }
     return 'You are over 18. You can register directly.';
   };
@@ -90,7 +132,7 @@ export default function SignupPage() {
           </div>
           <CardTitle>Create an Account</CardTitle>
           <CardDescription>
-            {step === 1 ? 'First, let\'s get your date of birth.' : getAgeGroupDescription()}
+            {step === 1 ? "First, let's get your date of birth." : getAgeGroupDescription()}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -179,3 +221,5 @@ export default function SignupPage() {
     </div>
   );
 }
+
+    

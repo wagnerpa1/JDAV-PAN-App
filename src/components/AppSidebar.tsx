@@ -25,25 +25,28 @@ import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { useUser, useAuth } from "@/firebase";
 import { signOut } from "firebase/auth";
-import { Avatar, AvatarFallback } from "./ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
+import { Skeleton } from "./ui/skeleton";
 
 function UserAuth() {
   const { user, isUserLoading } = useUser();
   const auth = useAuth();
 
   if (isUserLoading) {
-    return <div className="h-9 w-full animate-pulse rounded-lg bg-muted" />;
+    return <Skeleton className="h-12 w-full rounded-lg" />
   }
 
   if (!user) {
     return (
-      <Link
-        href="/login"
-        className="flex w-full items-center gap-3 rounded-lg bg-primary px-3 py-2 text-primary-foreground transition-all hover:bg-primary/90"
-      >
-        <LogInIcon className="h-5 w-5" />
-        Login
-      </Link>
+      <Button asChild className="w-full">
+        <Link
+          href="/login"
+          className="flex items-center gap-3 rounded-lg bg-primary px-3 py-2 text-primary-foreground transition-all hover:bg-primary/90"
+        >
+          <LogInIcon className="h-5 w-5" />
+          Login
+        </Link>
+      </Button>
     );
   }
 
@@ -58,8 +61,9 @@ function UserAuth() {
 
   return (
     <div className="flex items-center justify-between rounded-lg border bg-card p-2 text-card-foreground">
-      <div className="flex items-center gap-3">
+      <Link href="/profile" className="flex items-center gap-3 hover:no-underline text-card-foreground">
         <Avatar>
+          {user.photoURL && <AvatarImage src={user.photoURL} alt="User profile picture" />}
           <AvatarFallback>{getInitials()}</AvatarFallback>
         </Avatar>
         <div className="flex flex-col">
@@ -67,7 +71,7 @@ function UserAuth() {
             {user.isAnonymous ? "Anonymous User" : user.email}
           </span>
         </div>
-      </div>
+      </Link>
       <Button variant="ghost" size="icon" onClick={handleSignOut} aria-label="Sign out">
         <LogOutIcon className="h-5 w-5" />
       </Button>
@@ -85,6 +89,7 @@ export function AppSidebar() {
     { href: "/tours", label: "Tours", icon: MountainIcon },
     { href: "/material", label: "Material", icon: TentIcon },
     { href: "/documents", label: "Documents", icon: FileTextIcon },
+    { href: "/profile", label: "Profile", icon: UserIcon },
     { href: "/seed", label: "Seed Data", icon: RocketIcon },
   ];
 
@@ -130,3 +135,5 @@ export function AppSidebar() {
     </Sheet>
   );
 }
+
+    

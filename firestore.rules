@@ -74,6 +74,14 @@ service cloud.firestore {
       return isSignedIn() && get(/databases/$(database)/documents/tours/$(tourId)).data.leaderId == request.auth.uid;
     }
 
+    /**
+     * Checks if the user has an 'admin' role.
+     * Requires reading the user's own profile document.
+     */
+    function isAdmin() {
+      return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
     // -------------------------------------------------------------------------
     // Collection Rules
     // -------------------------------------------------------------------------
@@ -92,7 +100,12 @@ service cloud.firestore {
       allow get: if isOwner(userId);
       allow list: if false;
       allow create: if isOwner(userId) && request.resource.data.id == userId;
-      allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id;
+      // Allow updating only if the user is the owner and the core fields are not changed.
+      // The 'role' field cannot be changed by the user.
+      allow update: if isExistingOwner(userId)
+                    && request.resource.data.id == resource.data.id
+                    && request.resource.data.email == resource.data.email
+                    && request.resource.data.role == resource.data.role;
       allow delete: if isExistingOwner(userId);
 
       /**
@@ -115,19 +128,19 @@ service cloud.firestore {
 
     /**
      * @description Publicly readable tour information. Any authenticated user can create
-     *   a tour, becoming its leader. Only the leader can update or delete it.
+     *   a tour, becoming its leader. Only the leader or an admin can update or delete it.
      * @path /tours/{tourId}
      * @allow (create) An authenticated user creating a new tour and setting themselves as leader:
      *   `create /tours/tour_123` with `{ leaderId: 'user_abc' }` where auth.uid is 'user_abc'.
      * @deny (update) A user attempting to modify a tour where they are not the leader:
      *   `update /tours/tour_123` where auth.uid is 'user_xyz' and `leaderId` is 'user_abc'.
-     * @principle Implements a "Public Read with Owner-Only Writes" pattern using a `leaderId` field.
+     * @principle Implements a "Public Read with Owner/Admin Writes" pattern.
      */
     match /tours/{tourId} {
       allow get, list: if true;
       allow create: if isSignedIn() && request.resource.data.leaderId == request.auth.uid;
-      allow update: if resource != null && isOwner(resource.data.leaderId);
-      allow delete: if resource != null && isOwner(resource.data.leaderId);
+      allow update: if resource != null && (isOwner(resource.data.leaderId) || isAdmin());
+      allow delete: if resource != null && (isOwner(resource.data.leaderId) || isAdmin());
 
       /**
        * @description A denormalized, read-only view of reservations for a tour. This allows the tour
@@ -140,8 +153,8 @@ service cloud.firestore {
        * @principle Provides secure, read-only access for relevant parties and enforces a single source of truth for writes.
        */
       match /materialReservations/{materialReservationId} {
-        allow get: if isSignedIn() && (isOwner(resource.data.userId) || isTourLeader(tourId));
-        allow list: if isTourLeader(tourId);
+        allow get: if isSignedIn() && (isOwner(resource.data.userId) || isTourLeader(tourId) || isAdmin());
+        allow list: if isTourLeader(tourId) || isAdmin();
         allow create: if false;
         allow update: if false;
         allow delete: if false;
@@ -154,15 +167,13 @@ service cloud.firestore {
      * @path /materials/{materialId}
      * @allow (get) Any user, signed in or not, reading material details:
      *   `get /materials/mat_123`.
-     * @deny (create) Any user attempting to create a new material:
+     * @deny (create) Any non-admin user attempting to create a new material:
      *   `create /materials/mat_456`.
-     * @principle Secures reference data as read-only until an admin role is defined.
+     * @principle Secures reference data as read-only for non-admins.
      */
     match /materials/{materialId} {
       allow get, list: if true;
-      allow create: if false; // TODO: Implement admin-only write access
-      allow update: if false; // TODO: Implement admin-only write access
-      allow delete: if false; // TODO: Implement admin-only write access
+      allow create, update, delete: if isAdmin();
     }
 
     /**
@@ -171,15 +182,15 @@ service cloud.firestore {
      * @path /ageGroups/{ageGroupId}
      * @allow (list) Any user, signed in or not, listing all age groups:
      *   `list /ageGroups`.
-     * @deny (update) Any user attempting to modify an age group:
+     * @deny (update) Any non-admin user attempting to modify an age group:
      *   `update /ageGroups/group_123`.
-     * @principle Secures reference data as read-only until an admin role is defined.
+     * @principle Secures reference data as read-only for non-admins.
      */
     match /ageGroups/{ageGroupId} {
       allow get, list: if true;
-      allow create: if false; // TODO: Implement admin-only write access
-      allow update: if false; // TODO: Implement admin-only write access
-      allow delete: if false; // TODO: Implement admin-only write access
+      allow create, update, delete: if isAdmin();
     }
   }
 }
+
+    
