@@ -10,7 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import type { UserProfile, Participant, Tour } from '@/types';
+import type { UserProfile, Tour } from '@/types';
 import { Label } from '@/components/ui/label';
 import {
   Dialog,
@@ -22,7 +22,7 @@ import {
   DialogClose,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { PencilIcon, CalendarIcon, MapPinIcon } from 'lucide-react';
+import { PencilIcon, CalendarIcon, MapPinIcon, Trash2Icon } from 'lucide-react';
 import { format } from 'date-fns';
 import Link from 'next/link';
 
@@ -94,47 +94,45 @@ function EditNameDialog({ userProfile, userDocRef }: { userProfile: UserProfile,
 }
 
 function MyTours({ userId }: { userId: string }) {
-  const [tours, setTours] = useState<Tour[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const firestore = useFirestore();
+  const participantsQuery = useMemoFirebase(
+    () =>
+      userId
+        ? query(collectionGroup(firestore, 'participants'), where('userId', '==', userId))
+        : null,
+    [firestore, userId]
+  );
+  const { data: participations, isLoading: isLoadingParticipations } = useCollection<any>(participantsQuery);
+
+  const [tours, setTours] = useState<Tour[]>([]);
+  const [isLoadingTours, setIsLoadingTours] = useState(true);
 
   useEffect(() => {
-    async function fetchUserTours() {
-      if (!userId || !firestore) {
-        setIsLoading(false);
+    async function fetchTours() {
+      if (!participations) {
+        if (!isLoadingParticipations) {
+          setTours([]);
+          setIsLoadingTours(false);
+        }
         return;
       }
-      try {
-        setIsLoading(true);
-        const participationsQuery = query(
-          collectionGroup(firestore, 'participants'),
-          where('userId', '==', userId)
-        );
-        const querySnapshot = await getDocs(participationsQuery);
-        const tourIds = querySnapshot.docs.map(doc => doc.data().tourId);
-
-        if (tourIds.length > 0) {
-          const toursData: Tour[] = [];
-          for (const tourId of tourIds) {
-            const tourDocRef = doc(firestore, 'tours', tourId);
-            const tourDocSnap = await getDoc(tourDocRef);
-            if (tourDocSnap.exists()) {
-              toursData.push({ id: tourDocSnap.id, ...tourDocSnap.data() } as Tour);
-            }
-          }
-          setTours(toursData);
-        } else {
-          setTours([]);
-        }
-      } catch (error) {
-        console.error("Error fetching user's tours:", error);
-      } finally {
-        setIsLoading(false);
+      setIsLoadingTours(true);
+      const tourIds = participations.map(p => p.tourId);
+      if (tourIds.length > 0) {
+        const tourPromises = tourIds.map(id => getDoc(doc(firestore, 'tours', id)));
+        const tourSnaps = await Promise.all(tourPromises);
+        const toursData = tourSnaps.map(snap => ({ id: snap.id, ...snap.data() } as Tour));
+        setTours(toursData.filter(t => t.title)); // Filter out potential empty docs
+      } else {
+        setTours([]);
       }
+      setIsLoadingTours(false);
     }
+    fetchTours();
+  }, [participations, firestore, isLoadingParticipations]);
 
-    fetchUserTours();
-  }, [userId, firestore]);
+
+  const isLoading = isLoadingParticipations || isLoadingTours;
 
   if (isLoading) {
     return (
@@ -220,10 +218,7 @@ export default function ProfilePage() {
                     <Skeleton className="h-8 w-48 mx-auto mb-2" />
                     <Skeleton className="h-4 w-32 mx-auto" />
                 </CardHeader>
-                <CardContent className="space-y-4 pt-6">
-                    <Skeleton className="h-10 w-full" />
-                </CardContent>
-                 <CardFooter className="mt-6">
+                <CardFooter className="mt-6">
                      <Skeleton className="h-24 w-full" />
                 </CardFooter>
             </Card>
@@ -257,18 +252,12 @@ export default function ProfilePage() {
                     <CardTitle className="text-2xl">{userProfile.name}</CardTitle>
                     <EditNameDialog userProfile={userProfile} userDocRef={userDocRef}/>
                 </div>
-                <CardDescription className="capitalize bg-secondary text-secondary-foreground px-2 py-1 rounded-md text-sm">
+                 <p className="text-sm text-muted-foreground">{userProfile.email}</p>
+                <CardDescription className="capitalize bg-secondary text-secondary-foreground px-2 py-1 rounded-md text-sm mt-2">
                     {userProfile.role}
                 </CardDescription>
             </CardHeader>
-            <CardContent className="mt-4 space-y-6">
-                <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
-                    <Input id="email" value={userProfile.email} disabled />
-                    <p className="text-xs text-muted-foreground">Your email address cannot be changed.</p>
-               </div>
-            </CardContent>
-            <CardFooter className="flex flex-col items-start mt-6">
+            <CardFooter className="flex flex-col items-start mt-6 p-6">
                  {user && <MyTours userId={user.uid} />}
             </CardFooter>
         </Card>
