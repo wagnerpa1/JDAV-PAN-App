@@ -20,6 +20,8 @@
  *   needs. Writes to this path are disabled to enforce data consistency.
  * - /materials & /ageGroups: Publicly readable reference data. Writes are
  *   currently disabled, pending the implementation of an admin role.
+ * - /documents/{documentId}: Publicly readable document metadata. Writes are
+ *   restricted to admin users.
  *
  * ## Key Security Decisions
  * - User Enumeration is Disallowed: Listing users from the top-level `/users`
@@ -190,7 +192,18 @@ service cloud.firestore {
       allow get, list: if true;
       allow create, update, delete: if isAdmin();
     }
+    
+    /**
+     * @description Manages document metadata. Any signed-in user can read the
+     *   list of documents, but only admins can upload, modify, or delete them.
+     * @path /documents/{documentId}
+     * @allow (list) Any authenticated user listing all available documents.
+     * @deny (create) A non-admin user attempting to upload a document.
+     * @principle Secures document management to admin users.
+     */
+    match /documents/{documentId} {
+      allow get, list: if isSignedIn();
+      allow create, update, delete: if isAdmin();
+    }
   }
 }
-
-    
