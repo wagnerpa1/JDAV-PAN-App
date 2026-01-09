@@ -46,6 +46,17 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     // -------------------------------------------------------------------------
+    // Global Rules
+    // -------------------------------------------------------------------------
+    
+    // Explicitly deny any attempt to list documents at the root level.
+    // This is a critical security measure to prevent leaking all collection names
+    // and to stop costly, overly broad queries.
+    match /{document=**} {
+      allow list: if false;
+    }
+
+    // -------------------------------------------------------------------------
     // Helper Functions
     // -------------------------------------------------------------------------
 
@@ -271,3 +282,5 @@ service cloud.firestore {
     }
   }
 }
+
+    
