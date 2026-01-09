@@ -80,6 +80,17 @@
           "type": "number",
           "description": "The number of units of this material currently available."
         },
+        "price": {
+          "type": "number",
+          "description": "The price for reserving the material."
+        },
+        "sizes": {
+          "type": "object",
+          "description": "A map of available sizes and their respective quantities.",
+          "additionalProperties": {
+            "type": "number"
+          }
+        },
         "reservationIds": {
           "type": "array",
           "description": "References to MaterialReservations for this material. (Relationship: Material 1:N MaterialReservation)",
@@ -92,7 +103,8 @@
         "id",
         "name",
         "description",
-        "quantityAvailable"
+        "quantityAvailable",
+        "price"
       ]
     },
     "MaterialReservation": {
