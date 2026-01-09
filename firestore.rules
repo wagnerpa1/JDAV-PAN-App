@@ -1,0 +1,185 @@
+/**
+ * # Firestore Security Rules: Prototyping Mode
+ *
+ * ## Core Philosophy
+ * This ruleset enforces a user-centric security model where users have explicit
+ * control over the data they create. The default posture is secure, meaning
+ * access is denied unless explicitly granted. The rules prioritize strong
+ * authorization while remaining flexible on data schemas to support rapid
+ * application development and iteration.
+ *
+ * ## Data Structure
+ * - /users/{userId}: Private user profile data, accessible only by the owner.
+ * - /users/{userId}/materialReservations/{resId}: A user's private list of their
+ *   material reservations. This is the primary location for creating and managing
+ *   reservations.
+ * - /tours/{tourId}: A public collection of tours. Any signed-in user can create a
+ *   tour, and they become the designated "leader" with exclusive write access.
+ * - /tours/{tourId}/materialReservations/{resId}: A denormalized, read-only view of
+ *   reservations for a specific tour, intended for leaders to view participants'
+ *   needs. Writes to this path are disabled to enforce data consistency.
+ * - /materials & /ageGroups: Publicly readable reference data. Writes are
+ *   currently disabled, pending the implementation of an admin role.
+ *
+ * ## Key Security Decisions
+ * - User Enumeration is Disallowed: Listing users from the top-level `/users`
+ *   collection is forbidden to protect user privacy.
+ * - Ownership via `leaderId`: Tours are controlled by the user specified in the
+ *   `leaderId` field, establishing a clear ownership model for public documents.
+ * - Single Source of Truth for Writes: Material reservations can only be created
+ *   and modified through the user's private subcollection
+ *   (`/users/{userId}/materialReservations`). The corresponding path under a tour
+ *   is read-only to prevent data conflicts.
+ * - Denormalization for Authorization: Documents like `MaterialReservation` and
+ *   `Tour` contain necessary owner/leader IDs (`userId`, `leaderId`) directly on
+ *   the document. This avoids slow and costly `get()` calls in most rules, making
+ *   them more performant and secure.
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // -------------------------------------------------------------------------
+    // Helper Functions
+    // -------------------------------------------------------------------------
+
+    /**
+     * Checks if the user is authenticated.
+     */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /**
+     * Checks if the authenticated user's UID matches the provided userId.
+     * This is the fundamental check for document ownership.
+     */
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    /**
+     * Checks for ownership on an existing document. Used for update/delete
+     * to prevent operations on non-existent data.
+     */
+    function isExistingOwner(userId) {
+      return isOwner(userId) && resource != null;
+    }
+
+    /**
+     * Checks if the current user is the leader of a specific tour.
+     * Requires reading the tour document.
+     */
+    function isTourLeader(tourId) {
+      return isSignedIn() && get(/databases/$(database)/documents/tours/$(tourId)).data.leaderId == request.auth.uid;
+    }
+
+    // -------------------------------------------------------------------------
+    // Collection Rules
+    // -------------------------------------------------------------------------
+
+    /**
+     * @description Manages user profile data. Each user can create, read, and
+     *   manage their own profile, but cannot see or list other users' profiles.
+     * @path /users/{userId}
+     * @allow (create) A new user creating their own profile document:
+     *   `create /users/user_abc` where auth.uid is 'user_abc'.
+     * @deny (read) A user attempting to read another user's profile:
+     *   `get /users/user_xyz` where auth.uid is 'user_abc'.
+     * @principle Restricts access to a user's own data tree and prevents user enumeration.
+     */
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow list: if false;
+      allow create: if isOwner(userId) && request.resource.data.id == userId;
+      allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id;
+      allow delete: if isExistingOwner(userId);
+
+      /**
+       * @description Manages a user's material reservations. Users can fully
+       *   control their own list of reservations. This is the source of truth for writes.
+       * @path /users/{userId}/materialReservations/{materialReservationId}
+       * @allow (create) A user creating a reservation for themselves under their own path:
+       *   `create /users/user_abc/materialReservations/res_123` where auth.uid is 'user_abc'.
+       * @deny (list) A user trying to list reservations for another user:
+       *   `list /users/user_xyz/materialReservations` where auth.uid is 'user_abc'.
+       * @principle Enforces document ownership within a user's private subcollection.
+       */
+      match /materialReservations/{materialReservationId} {
+        allow get, list: if isOwner(userId);
+        allow create: if isOwner(userId) && request.resource.data.userId == userId;
+        allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
+        allow delete: if isExistingOwner(userId);
+      }
+    }
+
+    /**
+     * @description Publicly readable tour information. Any authenticated user can create
+     *   a tour, becoming its leader. Only the leader can update or delete it.
+     * @path /tours/{tourId}
+     * @allow (create) An authenticated user creating a new tour and setting themselves as leader:
+     *   `create /tours/tour_123` with `{ leaderId: 'user_abc' }` where auth.uid is 'user_abc'.
+     * @deny (update) A user attempting to modify a tour where they are not the leader:
+     *   `update /tours/tour_123` where auth.uid is 'user_xyz' and `leaderId` is 'user_abc'.
+     * @principle Implements a "Public Read with Owner-Only Writes" pattern using a `leaderId` field.
+     */
+    match /tours/{tourId} {
+      allow get, list: if true;
+      allow create: if isSignedIn() && request.resource.data.leaderId == request.auth.uid;
+      allow update: if resource != null && isOwner(resource.data.leaderId);
+      allow delete: if resource != null && isOwner(resource.data.leaderId);
+
+      /**
+       * @description A denormalized, read-only view of reservations for a tour. This allows the tour
+       *   leader and the reservation owner to view the data, but not write to it.
+       * @path /tours/{tourId}/materialReservations/{materialReservationId}
+       * @allow (get) The tour leader viewing a reservation for their tour:
+       *   `get /tours/tour_123/materialReservations/res_456` where auth.uid is the tour's leader.
+       * @deny (create) Any user trying to create a reservation directly on the tour's path:
+       *   `create /tours/tour_123/materialReservations/res_456`.
+       * @principle Provides secure, read-only access for relevant parties and enforces a single source of truth for writes.
+       */
+      match /materialReservations/{materialReservationId} {
+        allow get: if isSignedIn() && (isOwner(resource.data.userId) || isTourLeader(tourId));
+        allow list: if isTourLeader(tourId);
+        allow create: if false;
+        allow update: if false;
+        allow delete: if false;
+      }
+    }
+
+    /**
+     * @description Stores information about materials (equipment). This data is considered
+     *   publicly readable reference data.
+     * @path /materials/{materialId}
+     * @allow (get) Any user, signed in or not, reading material details:
+     *   `get /materials/mat_123`.
+     * @deny (create) Any user attempting to create a new material:
+     *   `create /materials/mat_456`.
+     * @principle Secures reference data as read-only until an admin role is defined.
+     */
+    match /materials/{materialId} {
+      allow get, list: if true;
+      allow create: if false; // TODO: Implement admin-only write access
+      allow update: if false; // TODO: Implement admin-only write access
+      allow delete: if false; // TODO: Implement admin-only write access
+    }
+
+    /**
+     * @description Stores information about age groups for tours. This data is
+     *   publicly readable reference data.
+     * @path /ageGroups/{ageGroupId}
+     * @allow (list) Any user, signed in or not, listing all age groups:
+     *   `list /ageGroups`.
+     * @deny (update) Any user attempting to modify an age group:
+     *   `update /ageGroups/group_123`.
+     * @principle Secures reference data as read-only until an admin role is defined.
+     */
+    match /ageGroups/{ageGroupId} {
+      allow get, list: if true;
+      allow create: if false; // TODO: Implement admin-only write access
+      allow update: if false; // TODO: Implement admin-only write access
+      allow delete: if false; // TODO: Implement admin-only write access
+    }
+  }
+}

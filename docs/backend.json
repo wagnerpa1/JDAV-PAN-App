@@ -1,0 +1,321 @@
+{
+  "entities": {
+    "Tour": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Tour",
+      "type": "object",
+      "description": "Represents a tour event with details about its date, location, capacity, and requirements.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Tour entity."
+        },
+        "title": {
+          "type": "string",
+          "description": "The title or name of the tour."
+        },
+        "date": {
+          "type": "string",
+          "description": "The date and time the tour is scheduled to occur.",
+          "format": "date-time"
+        },
+        "location": {
+          "type": "string",
+          "description": "The geographical location where the tour will take place."
+        },
+        "description": {
+          "type": "string",
+          "description": "A detailed description of the tour, including activities and highlights."
+        },
+        "participantLimit": {
+          "type": "number",
+          "description": "The maximum number of participants allowed on the tour."
+        },
+        "materialIds": {
+          "type": "array",
+          "description": "References to Materials required for the tour. (Relationship: Tour 1:N Material)",
+          "items": {
+            "type": "string"
+          }
+        },
+        "ageGroupId": {
+          "type": "string",
+          "description": "Reference to AgeGroup this tour is designed for. (Relationship: AgeGroup 1:N Tour)"
+        },
+        "leaderId": {
+          "type": "string",
+          "description": "Reference to User who is leading the tour. (Relationship: User 1:N Tour)"
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "date",
+        "location",
+        "description",
+        "participantLimit",
+        "ageGroupId",
+        "leaderId"
+      ]
+    },
+    "Material": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Material",
+      "type": "object",
+      "description": "Represents equipment or supplies needed for a tour, including availability and reservation details.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Material entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the material or equipment."
+        },
+        "description": {
+          "type": "string",
+          "description": "A description of the material, including its purpose and usage."
+        },
+        "quantityAvailable": {
+          "type": "number",
+          "description": "The number of units of this material currently available."
+        },
+        "reservationIds": {
+          "type": "array",
+          "description": "References to MaterialReservations for this material. (Relationship: Material 1:N MaterialReservation)",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "description",
+        "quantityAvailable"
+      ]
+    },
+    "MaterialReservation": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "MaterialReservation",
+      "type": "object",
+      "description": "Represents a reservation of materials for a specific user and tour.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the MaterialReservation entity."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to User who made the reservation. (Relationship: User 1:N MaterialReservation)"
+        },
+        "materialId": {
+          "type": "string",
+          "description": "Reference to Material being reserved. (Relationship: Material 1:N MaterialReservation)"
+        },
+        "tourId": {
+          "type": "string",
+          "description": "Reference to Tour for which the material is reserved. (Relationship: Tour 1:N MaterialReservation)"
+        },
+        "quantityReserved": {
+          "type": "number",
+          "description": "The quantity of the material reserved."
+        },
+        "reservationDate": {
+          "type": "string",
+          "description": "The date and time the reservation was made.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "materialId",
+        "tourId",
+        "quantityReserved",
+        "reservationDate"
+      ]
+    },
+    "AgeGroup": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "AgeGroup",
+      "type": "object",
+      "description": "Represents an age group that tours can be designed for.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the AgeGroup entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the age group (e.g., 'Youth', 'Adults')."
+        },
+        "minAge": {
+          "type": "number",
+          "description": "The minimum age for this group."
+        },
+        "maxAge": {
+          "type": "number",
+          "description": "The maximum age for this group."
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "minAge",
+        "maxAge"
+      ]
+    },
+    "User": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "User",
+      "type": "object",
+      "description": "Represents a user account, storing personal information and preferences.  Note: Does NOT store authentication-related data (passwords, etc.).",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the User entity."
+        },
+        "firstName": {
+          "type": "string",
+          "description": "The user's first name."
+        },
+        "lastName": {
+          "type": "string",
+          "description": "The user's last name."
+        },
+        "email": {
+          "type": "string",
+          "description": "The user's email address.",
+          "format": "email"
+        },
+        "profilePictureUrl": {
+          "type": "string",
+          "description": "URL of the user's profile picture.",
+          "format": "uri"
+        }
+      },
+      "required": [
+        "id",
+        "firstName",
+        "lastName",
+        "email"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/tours/{tourId}",
+        "definition": {
+          "entityName": "Tour",
+          "schema": {
+            "$ref": "#/backend/entities/Tour"
+          },
+          "description": "Stores information about tours. The 'tourId' parameter uniquely identifies each tour.",
+          "params": [
+            {
+              "name": "tourId",
+              "description": "Unique identifier for the tour."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/materials/{materialId}",
+        "definition": {
+          "entityName": "Material",
+          "schema": {
+            "$ref": "#/backend/entities/Material"
+          },
+          "description": "Stores information about the materials needed for tours. The 'materialId' parameter uniquely identifies each material.",
+          "params": [
+            {
+              "name": "materialId",
+              "description": "Unique identifier for the material."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "User",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "Stores user information. The 'userId' parameter uniquely identifies each user.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "Unique identifier for the user."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/ageGroups/{ageGroupId}",
+        "definition": {
+          "entityName": "AgeGroup",
+          "schema": {
+            "$ref": "#/backend/entities/AgeGroup"
+          },
+          "description": "Stores information about age groups for tours. The 'ageGroupId' parameter uniquely identifies each age group.",
+          "params": [
+            {
+              "name": "ageGroupId",
+              "description": "Unique identifier for the age group."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/materialReservations/{materialReservationId}",
+        "definition": {
+          "entityName": "MaterialReservation",
+          "schema": {
+            "$ref": "#/backend/entities/MaterialReservation"
+          },
+          "description": "Stores material reservations for a specific user.  Includes denormalized 'userId' and 'tourId' for authorization independence.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "Unique identifier for the user."
+            },
+            {
+              "name": "materialReservationId",
+              "description": "Unique identifier for the material reservation."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/tours/{tourId}/materialReservations/{materialReservationId}",
+        "definition": {
+          "entityName": "MaterialReservation",
+          "schema": {
+            "$ref": "#/backend/entities/MaterialReservation"
+          },
+          "description": "Stores material reservations for a specific tour.  Includes denormalized 'userId' and 'tourId' for authorization independence.",
+          "params": [
+            {
+              "name": "tourId",
+              "description": "Unique identifier for the tour."
+            },
+            {
+              "name": "materialReservationId",
+              "description": "Unique identifier for the material reservation."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore structure is designed to efficiently manage tour-related data, material reservations, age groups, and user information for the 'Alpine Connect' application. To ensure security and scalability, I will create root-level collections for `tours`, `materials`, `ageGroups`, and `users`. `MaterialReservation` will be a subcollection of both `/users/{userId}` and `/tours/{tourId}`, to make data easily retrievable from both sides, and to avoid `get()` calls in the rules.\n\nThis design promotes Authorization Independence.  For example, `MaterialReservation` documents contain the `userId` and `tourId`, avoiding the need to fetch parent document data for authorization.\n\nThe structure also supports the required QAPs.  `list` operations can be secured at each collection level.  Segregation of concerns allows specific rules for each collection (e.g., only admins can create tours, users can only create reservations for themselves)."
+  }
+}
