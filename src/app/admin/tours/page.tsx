@@ -3,7 +3,7 @@
 
 import { useMemo, useState } from 'react';
 import { collection, query, orderBy, doc } from 'firebase/firestore';
-import { useCollection, useFirestore, useMemoFirebase, deleteDocumentNonBlocking } from '@/firebase';
+import { useCollection, useFirestore, deleteDocumentNonBlocking } from '@/firebase';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import {
@@ -95,7 +95,7 @@ export default function TourManagementPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedTour, setSelectedTour] = useState<Tour | null>(null);
 
-  const toursQuery = useMemoFirebase(
+  const toursQuery = useMemo(
     () => {
       if (!firestore) return null;
       return query(collection(firestore, 'tours'), orderBy('startDate', 'desc'))

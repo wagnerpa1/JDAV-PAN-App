@@ -5,10 +5,9 @@ import { useParams } from 'next/navigation';
 import {
   useDoc,
   useFirestore,
-  useMemoFirebase,
   useUser,
   useCollection,
-  setDocumentNonBlocking,
+  updateDocumentNonBlocking,
   deleteDocumentNonBlocking,
 } from '@/firebase';
 import { doc, collection, query } from 'firebase/firestore';
@@ -85,7 +84,7 @@ export default function TourDetailPage() {
 
   const tourId = id as string;
 
-  const tourDocRef = useMemoFirebase(
+  const tourDocRef = useMemo(
     () => {
       if (!firestore) return null;
       return doc(firestore, 'tours', tourId)
@@ -94,19 +93,19 @@ export default function TourDetailPage() {
   );
   const { data: tour, isLoading, error } = useDoc<Tour>(tourDocRef);
 
-  const leaderDocRef = useMemoFirebase(
+  const leaderDocRef = useMemo(
     () => (tour?.leaderId && firestore ? doc(firestore, 'users', tour.leaderId) : null),
     [firestore, tour]
   );
   const { data: leader } = useDoc<UserProfile>(leaderDocRef);
 
-  const participantDocRef = useMemoFirebase(() => {
+  const participantDocRef = useMemo(() => {
     if (!user || !firestore) return null;
     return doc(firestore, `tours/${tourId}/participants/${user.uid}`);
   }, [firestore, tourId, user]);
   const { data: userParticipation } = useDoc<Participant>(participantDocRef);
 
-  const participantsQuery = useMemoFirebase(
+  const participantsQuery = useMemo(
     () => {
       if (!firestore) return null;
       return query(collection(firestore, 'tours', tourId, 'participants'))
@@ -134,7 +133,7 @@ export default function TourDetailPage() {
       joinedAt: new Date().toISOString(),
     };
 
-    setDocumentNonBlocking(participantRef, participantData, { merge: false });
+    updateDocumentNonBlocking(participantRef, participantData);
 
     toast({
       title: "You're in!",
@@ -298,7 +297,7 @@ export default function TourDetailPage() {
           </div>
         </CardContent>
         <CardFooter>
-            {getParticipationButton()}
+            {user && getParticipationButton()}
         </CardFooter>
       </Card>
     </div>

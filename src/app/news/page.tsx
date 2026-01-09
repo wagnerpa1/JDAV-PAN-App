@@ -1,13 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import {
   useFirestore,
   useCollection,
-  useMemoFirebase,
   useUser,
   useDoc,
   addDocumentNonBlocking,
@@ -55,7 +54,7 @@ function PostForm() {
   const { user } = useUser();
   const { toast } = useToast();
   
-  const userProfileRef = useMemoFirebase(() => (user && firestore ? doc(firestore, 'users', user.uid) : null), [user, firestore]);
+  const userProfileRef = useMemo(() => (user && firestore ? doc(firestore, 'users', user.uid) : null), [user, firestore]);
   const { data: userProfile } = useDoc<UserProfile>(userProfileRef);
 
   const form = useForm<PostFormData>({
@@ -133,7 +132,7 @@ function PostForm() {
 export default function NewsPage() {
   const firestore = useFirestore();
 
-  const postsQuery = useMemoFirebase(
+  const postsQuery = useMemo(
     () => {
       if (!firestore) return null;
       return query(collection(firestore, 'posts'), orderBy('createdAt', 'desc'))

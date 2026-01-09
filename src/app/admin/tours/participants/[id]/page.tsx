@@ -6,7 +6,6 @@ import { useParams, useRouter } from 'next/navigation';
 import {
   useDoc,
   useFirestore,
-  useMemoFirebase,
   useCollection,
 } from '@/firebase';
 import { doc, collection, query, limit } from 'firebase/firestore';
@@ -30,7 +29,7 @@ import { Button } from '@/components/ui/button';
 
 function ParticipantListItem({ userId }: { userId: string }) {
   const firestore = useFirestore();
-  const userDocRef = useMemoFirebase(
+  const userDocRef = useMemo(
     () => (userId && firestore ? doc(firestore, 'users', userId) : null),
     [firestore, userId]
   );
@@ -68,7 +67,7 @@ function ParticipantListItem({ userId }: { userId: string }) {
 function ParticipantList({ tourId }: { tourId: string }) {
   const firestore = useFirestore();
 
-  const participantsQuery = useMemoFirebase(
+  const participantsQuery = useMemo(
     () => {
       if (!firestore) return null;
       return query(collection(firestore, 'tours', tourId, 'participants'), limit(50));
@@ -111,7 +110,7 @@ export default function TourParticipantsPage() {
   const router = useRouter();
   const tourId = id as string;
 
-  const tourDocRef = useMemoFirebase(
+  const tourDocRef = useMemo(
     () => {
       if (!firestore) return null;
       return doc(firestore, 'tours', tourId)

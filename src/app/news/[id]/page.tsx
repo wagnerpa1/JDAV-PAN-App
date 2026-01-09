@@ -9,7 +9,6 @@ import {
   useFirestore,
   useDoc,
   useCollection,
-  useMemoFirebase,
   useUser,
   addDocumentNonBlocking,
 } from '@/firebase';
@@ -48,7 +47,7 @@ function CommentForm({ postId }: { postId: string }) {
   const { user } = useUser();
   const { toast } = useToast();
 
-  const userProfileRef = useMemoFirebase(() => (user && firestore ? doc(firestore, 'users', user.uid) : null), [user, firestore]);
+  const userProfileRef = useMemo(() => (user && firestore ? doc(firestore, 'users', user.uid) : null), [user, firestore]);
   const { data: userProfile } = useDoc<UserProfile>(userProfileRef);
 
   const form = useForm<CommentFormData>({
@@ -111,7 +110,7 @@ function CommentForm({ postId }: { postId: string }) {
 
 function CommentList({ postId }: { postId: string }) {
   const firestore = useFirestore();
-  const commentsQuery = useMemoFirebase(
+  const commentsQuery = useMemo(
     () => {
       if (!firestore) return null;
       return query(collection(firestore, 'posts', postId, 'comments'), orderBy('createdAt', 'asc'))
@@ -159,7 +158,7 @@ export default function PostDetailPage() {
   const router = useRouter();
   const postId = id as string;
 
-  const postDocRef = useMemoFirebase(
+  const postDocRef = useMemo(
     () => {
       if (!firestore) return null;
       return doc(firestore, 'posts', postId)

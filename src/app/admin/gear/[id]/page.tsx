@@ -12,7 +12,6 @@ import {
 import {
   useCollection,
   useFirestore,
-  useMemoFirebase,
   useDoc,
   updateDocumentNonBlocking
 } from '@/firebase';
@@ -21,7 +20,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { PackageIcon, AlertTriangleIcon, UserIcon, CalendarIcon, ArrowLeftIcon, CheckIcon, XIcon } from 'lucide-react';
 import type { Material, MaterialReservation, UserProfile } from '@/types';
-import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { format, isSameDay } from 'date-fns';
@@ -42,8 +40,6 @@ function ReservationStatusUpdater({ reservation }: { reservation: MaterialReserv
     const handleUpdateStatus = (newStatus: 'approved' | 'rejected') => {
         updateDocumentNonBlocking(reservationRef, { status: newStatus });
 
-        // If approved, we need to trigger the quantity update.
-        // This is now handled by a Cloud Function listening for this status update.
         if (newStatus === 'approved') {
             toast({
                 title: 'Reservation Approved',
@@ -71,8 +67,8 @@ function ReservationStatusUpdater({ reservation }: { reservation: MaterialReserv
 function ReservationDetails({ reservation }: { reservation: MaterialReservation }) {
   const firestore = useFirestore();
 
-  const userRef = useMemoFirebase(
-    () => (reservation.userId ? doc(firestore, 'users', reservation.userId) : null),
+  const userRef = useMemo(
+    () => (firestore && reservation.userId ? doc(firestore, 'users', reservation.userId) : null),
     [firestore, reservation.userId]
   );
   const { data: user, isLoading: userLoading } = useDoc<UserProfile>(userRef);
@@ -128,7 +124,7 @@ function ReservationDetails({ reservation }: { reservation: MaterialReservation 
 function MaterialReservationsList({ materialId }: { materialId: string }) {
   const firestore = useFirestore();
 
-  const allReservationsQuery = useMemoFirebase(() => {
+  const allReservationsQuery = useMemo(() => {
     if (!firestore) return null;
     return query(
       collectionGroup(firestore, 'materialReservations'),
@@ -183,8 +179,8 @@ export default function GearDetailPage() {
   const router = useRouter();
   const materialId = id as string;
 
-  const materialDocRef = useMemoFirebase(
-    () => (materialId ? doc(firestore, 'materials', materialId) : null),
+  const materialDocRef = useMemo(
+    () => (firestore && materialId ? doc(firestore, 'materials', materialId) : null),
     [firestore, materialId]
   );
   const { data: material, isLoading, error } = useDoc<Material>(materialDocRef);

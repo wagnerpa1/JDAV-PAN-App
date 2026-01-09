@@ -28,7 +28,6 @@ export interface Participant {
     userId: string;
     tourId: string;
     joinedAt: string;
-    user?: UserProfile; // Optional: denormalized user data
 }
 
 export interface Post {

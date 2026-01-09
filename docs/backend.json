@@ -368,167 +368,37 @@
     ]
   },
   "firestore": {
-    "structure": [
-      {
-        "path": "/tours/{tourId}",
-        "definition": {
-          "entityName": "Tour",
-          "schema": {
-            "$ref": "#/backend/entities/Tour"
-          },
-          "description": "Stores information about tours. The 'tourId' parameter uniquely identifies each tour.",
-          "params": [
-            {
-              "name": "tourId",
-              "description": "Unique identifier for the tour."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/tours/{tourId}/participants/{userId}",
-        "definition": {
-          "entityName": "Participant",
-          "schema": {
-            "$ref": "#/backend/entities/Participant"
-          },
-          "description": "Stores participants for a specific tour. The document ID is the user's UID.",
-          "params": [
-            {
-              "name": "tourId",
-              "description": "Unique identifier for the tour."
-            },
-            {
-              "name": "userId",
-              "description": "The UID of the participating user."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/materials/{materialId}",
-        "definition": {
-          "entityName": "Material",
-          "schema": {
-            "$ref": "#/backend/entities/Material"
-          },
-          "description": "Stores information about the materials needed for tours. The 'materialId' parameter uniquely identifies each material.",
-          "params": [
-            {
-              "name": "materialId",
-              "description": "Unique identifier for the material."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/users/{userId}",
-        "definition": {
-          "entityName": "User",
-          "schema": {
-            "$ref": "#/backend/entities/User"
-          },
-          "description": "Stores user information. The 'userId' parameter uniquely identifies each user.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "Unique identifier for the user."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/ageGroups/{ageGroupId}",
-        "definition": {
-          "entityName": "AgeGroup",
-          "schema": {
-            "$ref": "#/backend/entities/AgeGroup"
-          },
-          "description": "Stores information about age groups for tours. The 'ageGroupId' parameter uniquely identifies each age group.",
-          "params": [
-            {
-              "name": "ageGroupId",
-              "description": "Unique identifier for the age group."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/users/{userId}/materialReservations/{materialReservationId}",
-        "definition": {
-          "entityName": "MaterialReservation",
-          "schema": {
-            "$ref": "#/backend/entities/MaterialReservation"
-          },
-          "description": "Stores material reservations for a specific user. This is the primary path for writes.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "Unique identifier for the user."
-            },
-            {
-              "name": "materialReservationId",
-              "description": "Unique identifier for the material reservation."
-            }
-          ]
-        }
-      },
-       {
-        "path": "/posts/{postId}",
-        "definition": {
-          "entityName": "Post",
-          "schema": {
-            "$ref": "#/backend/entities/Post"
-          },
-          "description": "Stores sticky note posts. The 'postId' parameter uniquely identifies each post.",
-          "params": [
-            {
-              "name": "postId",
-              "description": "Unique identifier for the post."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/posts/{postId}/comments/{commentId}",
-        "definition": {
-          "entityName": "Comment",
-          "schema": {
-            "$ref": "#/backend/entities/Comment"
-          },
-          "description": "Stores comments for a specific post. The 'commentId' parameter uniquely identifies each comment.",
-          "params": [
-            {
-              "name": "postId",
-              "description": "Unique identifier for the post."
-            },
-            {
-              "name": "commentId",
-              "description": "Unique identifier for the comment."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/materialReservations/{materialReservationId}",
-        "definition": {
-          "isCollectionGroup": true,
-          "entityName": "MaterialReservation",
-          "schema": {
-            "$ref": "#/backend/entities/MaterialReservation"
-          },
-          "description": "A collection group query path for all material reservations. This allows admins to query across all subcollections.",
-          "params": [
-            {
-              "name": "materialReservationId",
-              "description": "Unique identifier for the material reservation."
-            }
-          ]
-        }
-      }
-    ],
-    "reasoning": "The Firestore structure is designed to efficiently manage tour-related data, material reservations, age groups, and user information for the 'Alpine Connect' application. To ensure security and scalability, I will create root-level collections for `tours`, `materials`, `ageGroups`, `users`, and `posts`. `MaterialReservation` will be a subcollection of `/users/{userId}` to enforce ownership and allow users to see all their reservations easily. `Comment` is a subcollection of `posts`. I am also defining a collection group for `materialReservations` to allow admins to query across all reservations for the Gear Management page.\n\nThis design promotes Authorization Independence. For example, `MaterialReservation` documents contain the `userId`, avoiding the need to fetch parent document data for authorization.\n\nThe structure also supports the required QAPs. `list` operations can be secured at each collection level. Segregation of concerns allows specific rules for each collection (e.g., only admins can create tours, users can only create reservations for themselves)."
+    "/tours/{tourId}": {
+      "schema": { "$ref": "#/entities/Tour" },
+      "description": "Stores information about tours. The 'tourId' parameter uniquely identifies each tour."
+    },
+    "/tours/{tourId}/participants/{userId}": {
+      "schema": { "$ref": "#/entities/Participant" },
+      "description": "Stores participants for a specific tour. The document ID is the user's UID."
+    },
+    "/materials/{materialId}": {
+      "schema": { "$ref": "#/entities/Material" },
+      "description": "Stores information about the materials needed for tours. The 'materialId' parameter uniquely identifies each material."
+    },
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "Stores user information. The 'userId' parameter uniquely identifies each user."
+    },
+    "/ageGroups/{ageGroupId}": {
+      "schema": { "$ref": "#/entities/AgeGroup" },
+      "description": "Stores information about age groups for tours. The 'ageGroupId' parameter uniquely identifies each age group."
+    },
+    "/users/{userId}/materialReservations/{materialReservationId}": {
+      "schema": { "$ref": "#/entities/MaterialReservation" },
+      "description": "Stores material reservations for a specific user. This is the primary path for writes."
+    },
+    "/posts/{postId}": {
+      "schema": { "$ref": "#/entities/Post" },
+      "description": "Stores sticky note posts. The 'postId' parameter uniquely identifies each post."
+    },
+    "/posts/{postId}/comments/{commentId}": {
+      "schema": { "$ref": "#/entities/Comment" },
+      "description": "Stores comments for a specific post. The 'commentId' parameter uniquely identifies each comment."
+    }
   }
 }
-
-    

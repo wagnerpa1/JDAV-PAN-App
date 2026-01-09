@@ -28,10 +28,9 @@ export interface UseDocResult<T> {
  * React hook to subscribe to a single Firestore document in real-time.
  * Handles nullable references.
  * 
- * IMPORTANT! YOU MUST MEMOIZE the inputted memoizedTargetRefOrQuery or BAD THINGS WILL HAPPEN
- * use useMemo to memoize it per React guidence.  Also make sure that it's dependencies are stable
- * references
- *
+ * IMPORTANT! The docRef passed to this hook should be memoized using `useMemo`
+ * to prevent re-creating the reference on every render, which can lead to unnecessary
+ * re-subscriptions and potential performance issues.
  *
  * @template T Optional type for document data. Defaults to any.
  * @param {DocumentReference<DocumentData> | null | undefined} docRef -
@@ -44,7 +43,7 @@ export function useDoc<T = any>(
   type StateDataType = WithId<T> | null;
 
   const [data, setData] = useState<StateDataType>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<FirestoreError | Error | null>(null);
 
   useEffect(() => {
@@ -54,10 +53,17 @@ export function useDoc<T = any>(
       setError(null);
       return;
     }
+    
+    // A simple check to ensure we have what looks like a Firestore doc reference.
+    if (typeof memoizedDocRef.firestore === 'undefined') {
+        console.error("useDoc: Invalid object passed. It's not a Firestore document reference.", memoizedDocRef);
+        setIsLoading(false);
+        setError(new Error("Invalid document reference passed to useDoc."));
+        return;
+    }
 
     setIsLoading(true);
     setError(null);
-    // Optional: setData(null); // Clear previous data instantly
 
     const unsubscribe = onSnapshot(
       memoizedDocRef,

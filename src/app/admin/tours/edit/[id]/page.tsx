@@ -6,7 +6,6 @@ import { useParams } from 'next/navigation';
 import {
   useDoc,
   useFirestore,
-  useMemoFirebase,
 } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { TourForm } from '../../TourForm';
@@ -23,7 +22,7 @@ export default function EditTourPage() {
   const firestore = useFirestore();
   const tourId = id as string;
 
-  const tourDocRef = useMemoFirebase(
+  const tourDocRef = useMemo(
     () => doc(firestore, 'tours', tourId),
     [firestore, tourId]
   );

@@ -7,7 +7,7 @@ import {
   where,
   orderBy,
 } from 'firebase/firestore';
-import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { useFirestore, useCollection } from '@/firebase';
 import { Calendar } from '@/components/ui/calendar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -34,7 +34,7 @@ export default function CalendarPage() {
   const monthStart = useMemo(() => startOfMonth(currentMonth), [currentMonth]);
   const monthEnd = useMemo(() => endOfMonth(currentMonth), [currentMonth]);
 
-  const toursQuery = useMemoFirebase(() => {
+  const toursQuery = useMemo(() => {
     if (!firestore) return null;
     // Query for tours that *end* after the start of the month
     // and *start* before the end of the month.
@@ -176,5 +176,3 @@ export default function CalendarPage() {
     </div>
   );
 }
-
-    
